@@ -92,10 +92,24 @@ def expand_range(prefix, range_):
         results.append("%s%0*d" % (prefix, width, i))
     return results
 
+def remove_duplicates(l):
+    """Remove duplicates from a list (but keep the order)."""
+    seen = set()
+    results = []
+    for e in l:
+        if e not in seen:
+            results.append(e)
+            seen.add(e)
+    return results
+
 # Main entry point
 
-def expand_hostlist(s):
-    """Expand a Livermore hostlist (e.g. n[1-10,12-14],d[1-3])."""
+def expand_hostlist(s, allow_duplicates=False, sort=False):
+    """Expand a Livermore hostlist (e.g. n[1-10,12-14],d[1-3]).
+
+    Unless allow_duplicates is true, duplicates will be purged
+    from the results. If sort is true, the output will be sorted.
+    """
 
     results = []
     bracket_level = 0
@@ -121,6 +135,10 @@ def expand_hostlist(s):
     if bracket_level > 0:
         raise BadHostlist, "unbalanced brackets"
 
+    if not allow_duplicates:
+        results = remove_duplicates(results)
+    if sort:
+        results = sorted(results)
     return results
 
 # MAIN
