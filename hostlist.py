@@ -23,8 +23,6 @@ MAX_SIZE = 100000
 def expand_part(s):
     """Expand a part (e.g. x[1-2]y[1-3][1-3]) (no outer level commas)."""
 
-    # print "EXPAND_PART", s
-
     # Base case: the empty part expand to the singleton list of ""
     if s == "":
         return [""]
@@ -36,7 +34,6 @@ def expand_part(s):
 
     m = re.match(r'([^,\[]*)(\[[^\]]*\])?(.*)', s)
     (prefix, rangelist, rest) = m.group(1,2,3)
-    #print "PREFIX", prefix, "RL", rangelist, "REST", rest
 
     # Expand the rest first (here is where we recurse!)
     rest_expanded = expand_part(rest)
@@ -115,7 +112,7 @@ def format_range(low, high, width):
 
 # Main entry points
 
-def expand_hostlist(s, allow_duplicates=False, sort=False):
+def expand_hostlist(hostlist, allow_duplicates=False, sort=False):
     """Expand a Livermore hostlist (e.g. n[1-10,12-14],d[1-3]).
 
     Unless allow_duplicates is true, duplicates will be purged
@@ -126,7 +123,7 @@ def expand_hostlist(s, allow_duplicates=False, sort=False):
     bracket_level = 0
     part = ""
     
-    for c in s + ",":
+    for c in hostlist + ",":
         if c == "," and bracket_level == 0:
             # Comma at top level, split!
             if part: results.extend(expand_part(part))
