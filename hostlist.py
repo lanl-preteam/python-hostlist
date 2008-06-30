@@ -5,7 +5,12 @@
 # nested brackets) have not been compared for compatibility
 # with pdsh et al.
 
+#
+#
+#
+
 import re
+import itertools
 
 # Exceptions
 class BadHostlist(Exception): pass
@@ -102,7 +107,13 @@ def remove_duplicates(l):
             seen.add(e)
     return results
 
-# Main entry point
+def format_range(low, high, width):
+    if low == high:
+        return "%0*d" % (width, low)
+    else:
+        return "%0*d-%0*d" % (width, low, width, high)
+
+# Main entry points
 
 def expand_hostlist(s, allow_duplicates=False, sort=False):
     """Expand a Livermore hostlist (e.g. n[1-10,12-14],d[1-3]).
@@ -141,10 +152,136 @@ def expand_hostlist(s, allow_duplicates=False, sort=False):
         results = sorted(results)
     return results
 
-# MAIN
+def collect_hostlist(hosts, silently_discard_bad = False):
+    """Collect a hostlist expression from a list of hosts.
+
+    We only try to group by the rightmost numerical part of the
+    hostname (but we accept a suffix after the numerical part).
+    Duplicates are removed (n1,n2,n1 => n[1-2]).
+
+    A bad hostname raises an exception (unless silently_discard_bad
+    is true causing the bad hostname to be silently discarded instead).
+    """
+
+    # Scan the list of host and build two things:
+    # *) a set of all hosts seen (used later)
+    # *) a list where each host entry is preprocessed for correct sorting
+
+    sortlist = []
+    remaining = set()
+    for host in hosts:
+        # We remove leading and trailing whitespace first
+        host = host.strip()
+
+        # We cannot accept a host containing any of the three special
+        # characters in the hostlist syntax (comma and flat brackets)
+        if re.search(r'[][,]', host):
+            if silently_discard_bad:
+                continue
+            else:
+                raise BadHostlist, "forbidden character"
+
+        remaining.add(host)
+
+        m = re.match(r'^(.*?)([0-9]+)?([^0-9]*)$', host)
+        (prefix, num_str, suffix) = m.group(1,2,3)
+        if num_str is None:
+            # A host with no integer part at all gets special treatment!
+            # The regexp matches with the whole string as the suffix,
+            # with nothing in the prefix or numeric parts.
+            # We do not want that, so we move it to the prefix and put
+            # None as a special marker where the suffix should be.
+            assert prefix == ""
+            sortlist.append(((host, None), None, None, host))
+        else:
+            # A host with at least an integer part (we care about the rightmost)
+            num_int = int(num_str)
+            num_width = len(num_str) # This width includes leading zeroes
+            sortlist.append(((prefix, suffix), num_int, num_width, host))
+
+    # Sort lexicographically, first on prefix, then on suffix, then on
+    # num_int (numerically), then...
+    # This determines the order of the final result.
+
+    sortlist.sort()
+
+    # We are ready to collect the result parts as a list (to be joined
+    # by commas at the very end)
+
+    results = []
+
+    # Now group entries with the same prefix+suffix combination (the
+    # key is the first element in the sortlist) to loop over them and
+    # then to loop over the list of hosts sharing the same
+    # prefix+suffix combination.
+
+    for ((prefix, suffix), group) in itertools.groupby(sortlist,
+                                                       key=lambda x:x[0]):
+
+        if suffix is None:
+            # Special case: a host with no numeric part
+            assert len(list(group)) == 1
+            results.append(prefix)
+            remaining.remove(prefix)
+        else:
+            # The general case. We prepare to collect a list of
+            # ranges expressed as (low, high, width) for later
+            # formatting.
+            range_list = []
+    
+            for ((prefix2, suffix2), num_int, num_width, host) in group:
+                if host not in remaining:
+                    # Below, we will loop internally to enumate a whole range
+                    # at a time. We then remove the covered hosts from the set.
+                    # Therefore, skip the host here if it is gone from the set.
+                    continue
+                assert num_int is not None
+
+                # Scan for a range. Some magic is present here and
+                # around this code because both n99 and n099 can be
+                # followed by n100.
+                low = num_int
+                while True:
+                    host = "%s%0*d%s" % (prefix, num_width, num_int, suffix)
+                    if host in remaining:
+                        remaining.remove(host)
+                        num_int += 1
+                    else:
+                        break
+                high = num_int - 1
+                assert high >= low
+                range_list.append((low, high, num_width))
+
+            # We have a list of ranges to format. Yet another special case
+            # to make sure a1,b1 is not shown as a[1],b[1]
+            if len(range_list) == 1 and range_list[0][0] == range_list[0][1]:
+                results.append("%s%0*d%s" % 
+                               (prefix,
+                                range_list[0][2], range_list[0][0],
+                                suffix))
+            else:
+                results.append(prefix + "[" + \
+                                   ",".join([format_range(l, h, w)
+                                             for l, h, w in range_list]) + \
+                                   "]" + suffix)
+
+    # At this point, the set of remaining hosts should be empty
+    # and we are ready to return the result.
+    assert not remaining
+    return ",".join(results)
+
+# MAIN - a stupid little test driver
+
 if __name__ == '__main__':
     import sys
-    for host in expand_hostlist(sys.argv[1]):
-        print host
+    if len(sys.argv) > 1:
+        # If an argument is given on the command line: expand the hostlist
+        for host in expand_hostlist(sys.argv[1]):
+            print host
+    else:
+        # If no arguments are given: collect a hostlist from stdin
+        hosts = [s.strip() for s in sys.stdin.readlines()]
+        print collect_hostlist(hosts)
+
 
 
