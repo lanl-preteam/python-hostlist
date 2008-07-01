@@ -71,7 +71,7 @@ def expand_hostlist(hostlist, allow_duplicates=False, sort=False):
     if not allow_duplicates:
         results = remove_duplicates(results)
     if sort:
-        results = sorted(results)
+        results = sorted(results) # FIXME: A better numerical sort is needed
     return results
 
 def expand_part(s):
@@ -322,18 +322,61 @@ def format_range(low, high, width):
     else:
         return "%0*d-%0*d" % (width, low, width, high)
 
-# MAIN - a stupid little test driver
+#
+# The library stuff ends here. Now lets do something useful
+# when called from the command line too :-)
+#
 
 if __name__ == '__main__':
+    import optparse
     import sys
-    if len(sys.argv) > 1:
-        # If an argument is given on the command line: expand the hostlist
-        for host in expand_hostlist(sys.argv[1]):
+    import operator
+
+    def func_union(args):
+        return reduce(operator.or_, args)
+
+    def func_intersection(args):
+        return reduce(operator.and_, args)
+
+    def func_difference(args):
+        return reduce(operator.sub, args)
+
+    op = optparse.OptionParser()
+    op.add_option("--union",
+                  action="store_const", dest="func", const=func_union)
+    op.add_option("--intersection",
+                  action="store_const", dest="func", const=func_intersection)
+    op.add_option("--difference",
+                  action="store_const", dest="func", const=func_difference)
+    op.add_option("--list",
+                  action="store_true")
+    op.add_option("--count",
+                  action="store_true")
+    op.add_option("--collect-first-argument",
+                  action="store_true")
+    (opts, args) = op.parse_args()
+
+    if opts.func is None:
+        func = func_union
+    else:
+        func = opts.func
+
+    if opts.collect_first_argument:
+        func_args = [set([s.strip() for s in sys.stdin.readlines()])]
+    else:
+        func_args  = []
+
+    func_args = func_args + [set(expand_hostlist(a)) for a in args]
+
+    res = func(func_args)
+
+    if opts.count:
+        print len(res)
+    elif opts.list:
+        for host in sorted(res):
             print host
     else:
-        # If no arguments are given: collect a hostlist from stdin
-        hosts = [s.strip() for s in sys.stdin.readlines()]
-        print collect_hostlist(hosts)
+        print collect_hostlist(res)
 
-
-
+# FIXME: Handle exceptions in the code above.
+# FIXME: Handle empty argument list.
