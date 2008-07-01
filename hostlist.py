@@ -19,9 +19,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-# WARNING: The behaviour in odd corner cases (such as 
-# nested brackets) have not been compared for compatibility
-# with pdsh et al.
+# WARNING: The behaviour in corner cases have not been compared for
+# compatibility with pdsh/dshbak et al.
 
 import re
 import itertools
@@ -122,11 +121,9 @@ def expand_range(prefix, range_):
     """ Expand a range (e.g. 1-10 or 14), putting a prefix before."""
 
     # Check for a single number first
-    try:
-        single_number = int(range_)
+    m = re.match(r'^[0-9]+$', range_)
+    if m:
         return ["%s%s" % (prefix, range_)]
-    except ValueError:
-        pass
 
     # Otherwise split low-high
     m = re.match(r'^([0-9]+)-([0-9]+)$', range_)
@@ -341,19 +338,25 @@ if __name__ == '__main__':
     def func_difference(args):
         return reduce(operator.sub, args)
 
-    op = optparse.OptionParser()
+    op = optparse.OptionParser(usage="usage: %prog [options] {hostlist arguments}")
     op.add_option("--union",
-                  action="store_const", dest="func", const=func_union)
+                  action="store_const", dest="func", const=func_union,
+                  help="compute the union of the hostlist arguments")
     op.add_option("--intersection",
-                  action="store_const", dest="func", const=func_intersection)
+                  action="store_const", dest="func", const=func_intersection,
+                  help="compute the intersection of the hostlist arguments")
     op.add_option("--difference",
-                  action="store_const", dest="func", const=func_difference)
-    op.add_option("--list",
-                  action="store_true")
+                  action="store_const", dest="func", const=func_difference,
+                  help="compute the difference between the first hostlist argument and the rest")
+    op.add_option("--expand",
+                  action="store_true",
+                  help="output the results as an expanded list")
     op.add_option("--count",
-                  action="store_true")
-    op.add_option("--collect-first-argument",
-                  action="store_true")
+                  action="store_true",
+                  help="output the number of hosts instead of a hostlist")
+    op.add_option("--collect-stdin",
+                  action="store_true",
+                  help="collect a list of hosts from stdin as the first argument")
     (opts, args) = op.parse_args()
 
     if opts.func is None:
@@ -361,22 +364,31 @@ if __name__ == '__main__':
     else:
         func = opts.func
 
-    if opts.collect_first_argument:
+    if opts.collect_stdin:
         func_args = [set([s.strip() for s in sys.stdin.readlines()])]
     else:
         func_args  = []
 
-    func_args = func_args + [set(expand_hostlist(a)) for a in args]
+    try:
+        func_args = func_args + [set(expand_hostlist(a)) for a in args]
+    except BadHostlist:
+        sys.stderr.write("Bad hostlist encountered\n")
+        sys.exit(1)
+
+    if not func_args:
+        op.print_help()
+        sys.exit(1)
 
     res = func(func_args)
 
     if opts.count:
         print len(res)
-    elif opts.list:
+    elif opts.expand:
         for host in sorted(res):
             print host
     else:
-        print collect_hostlist(res)
-
-# FIXME: Handle exceptions in the code above.
-# FIXME: Handle empty argument list.
+        try:
+            print collect_hostlist(res)
+        except BadHostlist:
+            sys.stderr.write("Bad hostname encountered\n")
+            sys.exit(1)
