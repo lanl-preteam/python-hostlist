@@ -70,7 +70,7 @@ def expand_hostlist(hostlist, allow_duplicates=False, sort=False):
     if not allow_duplicates:
         results = remove_duplicates(results)
     if sort:
-        results = sorted(results) # FIXME: A better numerical sort is needed
+        results = numerically_sorted(results)
     return results
 
 def expand_part(s):
@@ -319,6 +319,26 @@ def format_range(low, high, width):
     else:
         return "%0*d-%0*d" % (width, low, width, high)
 
+# Sort a list of hosts numerically
+
+def numerically_sorted(l):
+    """Sort a list of hosts numerically.
+
+    E.g. sorted order should be n1, n2, n10; not n1, n10, n2.
+    """
+
+    return sorted(l, key=numeric_sort_key)
+
+def int_if_possible(x):
+    try:
+        return int(x)
+    except:
+        return x
+
+def numeric_sort_key(x):
+    return [int_if_possible(n) for n in re.findall("([0-9]+|[^0-9]+)", x)]
+
+    
 #
 # The library stuff ends here. Now lets do something useful
 # when called from the command line too :-)
@@ -384,7 +404,7 @@ if __name__ == '__main__':
     if opts.count:
         print len(res)
     elif opts.expand:
-        for host in sorted(res):
+        for host in numerically_sorted(res):
             print host
     else:
         try:
