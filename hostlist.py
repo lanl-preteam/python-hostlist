@@ -152,23 +152,23 @@ def expand_hostlist(hostlist, allow_duplicates=False, sort=False):
 def collect_hostlist(hosts, silently_discard_bad = False):
     """Collect a hostlist expression from a list of hosts.
 
-    We only try to group by the rightmost numerical part of the
-    hostname (but we accept a suffix after the numerical part).
+    We start grouping from the rightmost numerical part.
     Duplicates are removed (n1,n2,n1 => n[1-2]).
 
     A bad hostname raises an exception (unless silently_discard_bad
     is true causing the bad hostname to be silently discarded instead).
     """
 
-    # Scan the list of host and build two things:
-    # *) a set of all hosts seen (used later)
-    # *) a list where each host entry is preprocessed for correct sorting
+    # Split hostlist into a list of (host, "") for the iterative part.
+    # (Also check for bad node names now)
+    # The idea is to move already collected numerical parts from the
+    # left side (seen by each loop) to the right side (just copied).
 
-    sortlist = []
-    remaining = set()
+    left_right = []
     for host in hosts:
-        # We remove leading and trailing whitespace first
+        # We remove leading and trailing whitespace first, and skip empty lines
         host = host.strip()
+        if host == "": continue
 
         # We cannot accept a host containing any of the three special
         # characters in the hostlist syntax (comma and flat brackets)
@@ -178,12 +178,43 @@ def collect_hostlist(hosts, silently_discard_bad = False):
             else:
                 raise BadHostlist, "forbidden character"
 
+        left_right.append((host, ""))
+
+    # Call the iterative function until it says it's done
+    looping = True
+    while looping:
+        left_right, looping = collect_hostlist_1(left_right)
+    return ",".join([left + right for left, right in left_right])
+
+def collect_hostlist_1(left_right):
+    """Collect a hostlist expression from a list of hosts (left+right).
+
+    The input is a list of tuples (left, right). The left part
+    is analyzed, while the right part is just passed along
+    (it can contain already collected range expressions).
+    """
+
+    # Scan the list of hosts (left+right) and build two things:
+    # *) a set of all hosts seen (used later)
+    # *) a list where each host entry is preprocessed for correct sorting
+
+    sortlist = []
+    remaining = set()
+    for left, right in left_right:
+        host = left + right
         remaining.add(host)
 
-        m = re.match(r'^(.*?)([0-9]+)?([^0-9]*)$', host)
+        # Match the left part into parts
+        m = re.match(r'^(.*?)([0-9]+)?([^0-9]*)$', left)
         (prefix, num_str, suffix) = m.group(1,2,3)
+
+        # Add the right part unprocessed to the suffix.
+        # This ensures than an already computed range expression
+        # in the right part is not analyzed again.
+        suffix = suffix + right 
+
         if num_str is None:
-            # A host with no integer part at all gets special treatment!
+            # A left part with no integer part at all gets special treatment!
             # The regexp matches with the whole string as the suffix,
             # with nothing in the prefix or numeric parts.
             # We do not want that, so we move it to the prefix and put
@@ -191,7 +222,7 @@ def collect_hostlist(hosts, silently_discard_bad = False):
             assert prefix == ""
             sortlist.append(((host, None), None, None, host))
         else:
-            # A host with at least an integer part (we care about the rightmost)
+            # A left part with at least an integer part (we care about the rightmost)
             num_int = int(num_str)
             num_width = len(num_str) # This width includes leading zeroes
             sortlist.append(((prefix, suffix), num_int, num_width, host))
@@ -202,10 +233,11 @@ def collect_hostlist(hosts, silently_discard_bad = False):
 
     sortlist.sort()
 
-    # We are ready to collect the result parts as a list (to be joined
-    # by commas at the very end)
+    # We are ready to collect the result parts as a list of new (left,
+    # right) tuples
 
     results = []
+    needs_another_loop = False 
 
     # Now group entries with the same prefix+suffix combination (the
     # key is the first element in the sortlist) to loop over them and
@@ -218,7 +250,7 @@ def collect_hostlist(hosts, silently_discard_bad = False):
         if suffix is None:
             # Special case: a host with no numeric part
             assert len(list(group)) == 1
-            results.append(prefix)
+            results.append(("", prefix)) # Move all to the right part
             remaining.remove(prefix)
         else:
             # The general case. We prepare to collect a list of
@@ -249,23 +281,28 @@ def collect_hostlist(hosts, silently_discard_bad = False):
                 assert high >= low
                 range_list.append((low, high, num_width))
 
-            # We have a list of ranges to format. Yet another special case
-            # to make sure a1,b1 is not shown as a[1],b[1]
+            # We have a list of ranges to format. We make sure
+            # we move our handled numerical part to the right to
+            # stop it from being processed again.
+            needs_another_loop = True
             if len(range_list) == 1 and range_list[0][0] == range_list[0][1]:
-                results.append("%s%0*d%s" % 
-                               (prefix,
-                                range_list[0][2], range_list[0][0],
-                                suffix))
+                # Special case to make sure that n1 is not shown as n[1] etc
+                results.append((prefix,
+                                "%0*d%s" % 
+                               (range_list[0][2], range_list[0][0], suffix)))
             else:
-                results.append(prefix + "[" + \
+                # General case where high > low
+                results.append((prefix, "[" + \
                                    ",".join([format_range(l, h, w)
                                              for l, h, w in range_list]) + \
-                                   "]" + suffix)
+                                   "]" + suffix))
 
     # At this point, the set of remaining hosts should be empty
-    # and we are ready to return the result.
+    # and we are ready to return the result, together with the flags that
+    # says if we need to loop again (we do if we have added something
+    # to a left part).
     assert not remaining
-    return ",".join(results)
+    return results, needs_another_loop
 
 # MAIN - a stupid little test driver
 
