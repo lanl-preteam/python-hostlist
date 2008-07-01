@@ -1,27 +1,81 @@
 #!/usr/bin/env python
-# Hostlist utilities
+# -*- coding: utf-8 -*-
+# Hostlist library and utility
+#
+# Copyright (C) 2008 Kent Engström, NSC <kent@nsc.liu.se>
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 # WARNING: The behaviour in odd corner cases (such as 
 # nested brackets) have not been compared for compatibility
 # with pdsh et al.
 
-#
-#
-#
-
 import re
 import itertools
 
-# Exceptions
+# Exception used for error reporting to the caller
 class BadHostlist(Exception): pass
 
-# Configuration
+# Configuration to guard against ridiculously long expanded lists
 MAX_SIZE = 100000
 
-# Helper functions
+# Hostlist expansion
+
+def expand_hostlist(hostlist, allow_duplicates=False, sort=False):
+    """Expand a Livermore hostlist string to a Python list.
+
+    Exemple: expand_hostlist("n[9-11],d[01-02]") ==> 
+             ['n9', 'n10', 'n11', 'd01', 'd02']
+
+    Unless allow_duplicates is true, duplicates will be purged
+    from the results. If sort is true, the output will be sorted.
+    """
+
+    results = []
+    bracket_level = 0
+    part = ""
+    
+    for c in hostlist + ",":
+        if c == "," and bracket_level == 0:
+            # Comma at top level, split!
+            if part: results.extend(expand_part(part))
+            part = ""
+            bad_part = False
+        else:
+            part += c
+
+        if c == "[": bracket_level += 1
+        elif c == "]": bracket_level -= 1
+
+        if bracket_level > 1:
+            raise BadHostlist, "nested brackets"
+        elif bracket_level < 0:
+            raise BadHostlist, "unbalanced brackets"
+
+    if bracket_level > 0:
+        raise BadHostlist, "unbalanced brackets"
+
+    if not allow_duplicates:
+        results = remove_duplicates(results)
+    if sort:
+        results = sorted(results)
+    return results
 
 def expand_part(s):
-    """Expand a part (e.g. x[1-2]y[1-3][1-3]) (no outer level commas)."""
+    """Expand a part (e.g. "x[1-2]y[1-3][1-3]") (no outer level commas)."""
 
     # Base case: the empty part expand to the singleton list of ""
     if s == "":
@@ -56,7 +110,7 @@ def expand_part(s):
             for rest_part in rest_expanded]
 
 def expand_rangelist(prefix, rangelist):
-    """ Expand a rangelist (e.g. 1-10,12-14), putting a prefix before."""
+    """ Expand a rangelist (e.g. "1-10,14"), putting a prefix before."""
     
     # Split at commas and expand each range separately
     results = []
@@ -65,7 +119,7 @@ def expand_rangelist(prefix, rangelist):
     return results
 
 def expand_range(prefix, range_):
-    """ Expand a rangelist (e.g. 1-10 or 14), putting a prefix before."""
+    """ Expand a range (e.g. 1-10 or 14), putting a prefix before."""
 
     # Check for a single number first
     try:
@@ -104,56 +158,13 @@ def remove_duplicates(l):
             seen.add(e)
     return results
 
-def format_range(low, high, width):
-    if low == high:
-        return "%0*d" % (width, low)
-    else:
-        return "%0*d-%0*d" % (width, low, width, high)
-
-# Main entry points
-
-def expand_hostlist(hostlist, allow_duplicates=False, sort=False):
-    """Expand a Livermore hostlist (e.g. n[1-10,12-14],d[1-3]).
-
-    Unless allow_duplicates is true, duplicates will be purged
-    from the results. If sort is true, the output will be sorted.
-    """
-
-    results = []
-    bracket_level = 0
-    part = ""
-    
-    for c in hostlist + ",":
-        if c == "," and bracket_level == 0:
-            # Comma at top level, split!
-            if part: results.extend(expand_part(part))
-            part = ""
-            bad_part = False
-        else:
-            part += c
-
-        if c == "[": bracket_level += 1
-        elif c == "]": bracket_level -= 1
-
-        if bracket_level > 1:
-            raise BadHostlist, "nested brackets"
-        elif bracket_level < 0:
-            raise BadHostlist, "unbalanced brackets"
-
-    if bracket_level > 0:
-        raise BadHostlist, "unbalanced brackets"
-
-    if not allow_duplicates:
-        results = remove_duplicates(results)
-    if sort:
-        results = sorted(results)
-    return results
+# Hostlist collection
 
 def collect_hostlist(hosts, silently_discard_bad = False):
-    """Collect a hostlist expression from a list of hosts.
+    """Collect a hostlist string from a Python list of hosts.
 
     We start grouping from the rightmost numerical part.
-    Duplicates are removed (n1,n2,n1 => n[1-2]).
+    Duplicates are removed.
 
     A bad hostname raises an exception (unless silently_discard_bad
     is true causing the bad hostname to be silently discarded instead).
@@ -187,7 +198,7 @@ def collect_hostlist(hosts, silently_discard_bad = False):
     return ",".join([left + right for left, right in left_right])
 
 def collect_hostlist_1(left_right):
-    """Collect a hostlist expression from a list of hosts (left+right).
+    """Collect a hostlist string from a list of hosts (left+right).
 
     The input is a list of tuples (left, right). The left part
     is analyzed, while the right part is just passed along
@@ -214,7 +225,7 @@ def collect_hostlist_1(left_right):
         suffix = suffix + right 
 
         if num_str is None:
-            # A left part with no integer part at all gets special treatment!
+            # A left part with no numeric part at all gets special treatment!
             # The regexp matches with the whole string as the suffix,
             # with nothing in the prefix or numeric parts.
             # We do not want that, so we move it to the prefix and put
@@ -222,7 +233,8 @@ def collect_hostlist_1(left_right):
             assert prefix == ""
             sortlist.append(((host, None), None, None, host))
         else:
-            # A left part with at least an integer part (we care about the rightmost)
+            # A left part with at least an numeric part
+            # (we care about the rightmost numeric part)
             num_int = int(num_str)
             num_width = len(num_str) # This width includes leading zeroes
             sortlist.append(((prefix, suffix), num_int, num_width, host))
@@ -234,7 +246,7 @@ def collect_hostlist_1(left_right):
     sortlist.sort()
 
     # We are ready to collect the result parts as a list of new (left,
-    # right) tuples
+    # right) tuples.
 
     results = []
     needs_another_loop = False 
@@ -250,7 +262,7 @@ def collect_hostlist_1(left_right):
         if suffix is None:
             # Special case: a host with no numeric part
             assert len(list(group)) == 1
-            results.append(("", prefix)) # Move all to the right part
+            results.append(("", prefix)) # Move everything to the right part
             remaining.remove(prefix)
         else:
             # The general case. We prepare to collect a list of
@@ -266,9 +278,7 @@ def collect_hostlist_1(left_right):
                     continue
                 assert num_int is not None
 
-                # Scan for a range. Some magic is present here and
-                # around this code because both n99 and n099 can be
-                # followed by n100.
+                # Scan for a range starting at the current host
                 low = num_int
                 while True:
                     host = "%s%0*d%s" % (prefix, num_width, num_int, suffix)
@@ -297,12 +307,20 @@ def collect_hostlist_1(left_right):
                                              for l, h, w in range_list]) + \
                                    "]" + suffix))
 
-    # At this point, the set of remaining hosts should be empty
-    # and we are ready to return the result, together with the flags that
-    # says if we need to loop again (we do if we have added something
-    # to a left part).
+    # At this point, the set of remaining hosts should be empty and we
+    # are ready to return the result, together with the flag that says
+    # if we need to loop again (we do if we have added something to a
+    # left part).
     assert not remaining
     return results, needs_another_loop
+
+def format_range(low, high, width):
+    """Format a range from low to high inclusively, with a certain width."""
+
+    if low == high:
+        return "%0*d" % (width, low)
+    else:
+        return "%0*d-%0*d" % (width, low, width, high)
 
 # MAIN - a stupid little test driver
 
