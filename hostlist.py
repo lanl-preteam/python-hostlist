@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # Hostlist library and utility
 #
-# Copyright (C) 2008 Kent Engström, NSC <kent@nsc.liu.se>
+# Copyright (C) 2008 Kent Engström, National Supercomputer Centre
+#                    <kent@nsc.liu.se>
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +21,7 @@
 # 02110-1301, USA.
 
 # WARNING: The behaviour in corner cases have not been compared for
-# compatibility with pdsh/dshbak et al.
+# compatibility with pdsh/dshbak/SLURM et al.
 
 import re
 import itertools
