@@ -349,6 +349,7 @@ if __name__ == '__main__':
     import optparse
     import sys
     import operator
+    import os
 
     def func_union(args):
         return reduce(operator.or_, args)
@@ -360,45 +361,45 @@ if __name__ == '__main__':
         return reduce(operator.sub, args)
 
     op = optparse.OptionParser(usage="usage: %prog [options] {hostlist arguments}")
-    op.add_option("--union",
+    op.add_option("-u", "--union",
                   action="store_const", dest="func", const=func_union,
-                  help="compute the union of the hostlist arguments")
-    op.add_option("--intersection",
+                  default=func_union,
+                  help="compute the union of the hostlist arguments (default)")
+    op.add_option("-i", "--intersection",
                   action="store_const", dest="func", const=func_intersection,
                   help="compute the intersection of the hostlist arguments")
-    op.add_option("--difference",
+    op.add_option("-d", "--difference",
                   action="store_const", dest="func", const=func_difference,
                   help="compute the difference between the first hostlist argument and the rest")
-    op.add_option("--expand",
+    op.add_option("-w", "--expand",
                   action="store_true",
                   help="output the results as an expanded list")
-    op.add_option("--count",
+    op.add_option("-c", "--collapse",
+                  action="store_false", dest="expand",
+                  help="output the results as a hostlist expression (default)")
+    op.add_option("-n", "--count",
                   action="store_true",
                   help="output the number of hosts instead of a hostlist")
-    op.add_option("--collect-stdin",
-                  action="store_true",
-                  help="collect a list of hosts from stdin as the first argument")
     (opts, args) = op.parse_args()
 
-    if opts.func is None:
-        func = func_union
-    else:
-        func = opts.func
+    func = opts.func
 
-    if opts.collect_stdin:
-        func_args = [set([s.strip() for s in sys.stdin.readlines()])]
-    else:
-        func_args  = []
+    func_args  = []
 
     try:
-        func_args = func_args + [set(expand_hostlist(a)) for a in args]
+        for a in args:
+            if a == "-":
+                func_args.append(
+                    set([s.strip() for s in sys.stdin.readlines()]))
+            else:
+                func_args.append(set(expand_hostlist(a)))
     except BadHostlist:
         sys.stderr.write("Bad hostlist encountered\n")
         sys.exit(1)
 
     if not func_args:
         op.print_help()
-        sys.exit(1)
+        sys.exit(os.EX_USAGE)
 
     res = func(func_args)
 
