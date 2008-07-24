@@ -395,13 +395,14 @@ if __name__ == '__main__':
     try:
         for a in args:
             if a == "-":
-                h = [ expand_hostlist(hl) for hl in sys.stdin.read().split() ]
-                func_args.append(set(sum(h, [])))
+                for a in sys.stdin.read().split():
+                    func_args.append(set(expand_hostlist(a)))
             else:
                 func_args.append(set(expand_hostlist(a)))
-    except BadHostlist:
-        sys.stderr.write("Bad hostlist encountered\n")
-        sys.exit(1)
+    except BadHostlist, e:
+        sys.stderr.write("Bad hostlist ``%s'' encountered: %s\n"
+                         % ((a,) + e.args))
+        sys.exit(os.EX_DATAERR)
 
     if not func_args:
         op.print_help()
@@ -417,6 +418,6 @@ if __name__ == '__main__':
     else:
         try:
             print collect_hostlist(res)
-        except BadHostlist:
-            sys.stderr.write("Bad hostname encountered\n")
-            sys.exit(1)
+        except BadHostlist, e:
+            sys.stderr.write("Bad hostname encountered: %s\n" % e.args)
+            sys.exit(os.EX_DATAERR)
