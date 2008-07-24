@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 # Hostlist library and utility
 #
-# Copyright (C) 2008 Kent Engström, National Supercomputer Centre
-#                    <kent@nsc.liu.se>
+# Copyright (C) 2008 Kent Engström <kent@nsc.liu.se> and
+#                    Thomas Bellman <bellman@nsc.liu.se>,
+#                    National Supercomputer Centre
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
