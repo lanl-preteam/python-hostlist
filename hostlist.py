@@ -260,7 +260,6 @@ def collect_hostlist_1(left_right):
 
         if suffix is None:
             # Special case: a host with no numeric part
-            assert len(list(group)) == 1
             results.append(("", prefix)) # Move everything to the right part
             remaining.remove(prefix)
         else:
