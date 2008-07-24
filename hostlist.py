@@ -360,6 +360,9 @@ if __name__ == '__main__':
     def func_difference(args):
         return reduce(operator.sub, args)
 
+    def func_xor(args):
+        return reduce(operator.xor, args)
+
     op = optparse.OptionParser(usage="usage: %prog [options] {hostlist arguments}")
     op.add_option("-u", "--union",
                   action="store_const", dest="func", const=func_union,
@@ -371,6 +374,9 @@ if __name__ == '__main__':
     op.add_option("-d", "--difference",
                   action="store_const", dest="func", const=func_difference,
                   help="compute the difference between the first hostlist argument and the rest")
+    op.add_option("-x", "--symmetric-difference",
+                  action="store_const", dest="func", const=func_xor,
+                  help="compute the symmetric difference between the first hostlist argument and the rest")
     op.add_option("-w", "--expand",
                   action="store_true",
                   help="output the results as an expanded list")
