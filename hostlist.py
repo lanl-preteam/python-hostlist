@@ -389,8 +389,8 @@ if __name__ == '__main__':
     try:
         for a in args:
             if a == "-":
-                func_args.append(
-                    set([s.strip() for s in sys.stdin.readlines()]))
+                h = [ expand_hostlist(hl) for hl in sys.stdin.read().split() ]
+                func_args.append(set(sum(h, [])))
             else:
                 func_args.append(set(expand_hostlist(a)))
     except BadHostlist:
