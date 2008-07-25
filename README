@@ -20,22 +20,22 @@ exception being raised.
 If you invoke hostlist.py from the command line, it doubles as a utility
 for doing set operations on hostlists. Example:
 
-% ./hostlist.py n[1-10] n[5-20]
-n[1-20]
-% ./hostlist.py --difference n[1-10] n[5-20]
-n[1-4]
-% ./hostlist.py --expand --intersection n[1-10] n[5-20] 
-n5
-n6
-n7
-n8
-n9
-n10
+  % ./hostlist.py n[1-10] n[5-20]
+  n[1-20]
+  % ./hostlist.py --difference n[1-10] n[5-20]
+  n[1-4]
+  % ./hostlist.py --expand --intersection n[1-10] n[5-20] 
+  n5
+  n6
+  n7
+  n8
+  n9
+  n10
 
 Install by running
 
-    python setup.py build   (as yourself)
-    python setup.py install (as root) 
+  python setup.py build   (as yourself)
+  python setup.py install (as root) 
 
 or just copy the hostlist.py file to an appropriate place.
 
