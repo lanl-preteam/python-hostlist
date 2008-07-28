@@ -1,5 +1,10 @@
-The Python module hostlist.py knows how to expand and collect
-LLNL hostlist expressions. Example:
+The Python module hostlist.py knows how to expand and collect LLNL
+hostlists, as used by SLURM (https://computing.llnl.gov/linux/slurm/),
+pdsh (https://computing.llnl.gov/linux/pdsh.html),
+powerman (https://computing.llnl.gov/linux/powerman.html) and
+genders (https://computing.llnl.gov/linux/genders.html), among other projects.
+
+Example:
 
   % python
   Python 2.5.1 (r251:54863, Jul 10 2008, 17:24:48) 
