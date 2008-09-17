@@ -2,7 +2,7 @@
 
 Name:           python-hostlist
 Version:        1.1
-Release:        5
+Release:        6
 Summary:        Python module for hostlist handling
 
 Group:          Development/Languages
@@ -29,7 +29,7 @@ used to collect/expand hostlists and perform set operations on them.
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
+%{__python} setup.py install -O1 --skip-build --prefix /usr --root $RPM_BUILD_ROOT
 
  
 %clean
