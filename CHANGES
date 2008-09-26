@@ -1,3 +1,8 @@
+Version 1.2 (2008-09-18)
+
+    Add "--prefix /usr" in the installation script of the spec file
+    (needed on SUSE Linux where the default is /usr/local).
+
 Version 1.1 (2008-09-17)
 
     Move the command line utility to a separate 'hostlist' command.

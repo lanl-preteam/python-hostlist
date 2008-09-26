@@ -3,7 +3,7 @@
 #
 # Hostlist library
 #
-# Version 1.1
+# Version 1.2
 #
 # Copyright (C) 2008 Kent Engström <kent@nsc.liu.se> and
 #                    Thomas Bellman <bellman@nsc.liu.se>,
