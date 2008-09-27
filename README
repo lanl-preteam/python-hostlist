@@ -41,7 +41,7 @@ or just copy the hostlist.py and hostlist files to appropriate places.
 
 Build RPM packages by running:
 
-  rpmbuild -ta python-hostlist-1.2.tar.gz
+  rpmbuild -ta python-hostlist-1.2.9.1.tar.gz
 
 If you have questions, suggestions, bug reports or patches, please send them
 to kent@nsc.liu.se.

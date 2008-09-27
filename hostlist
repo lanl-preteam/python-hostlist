@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 #
 # Hostlist utility
-#
-# Version 1.2
-#
+
+UTILITY_VERSION="1.2.9.1"
+
 # Copyright (C) 2008 Kent Engström <kent@nsc.liu.se> and
 #                    Thomas Bellman <bellman@nsc.liu.se>,
 #                    National Supercomputer Centre
@@ -29,7 +29,7 @@ import os
 import optparse
 import operator
 
-from hostlist import expand_hostlist, collect_hostlist, numerically_sorted, BadHostlist
+from hostlist import expand_hostlist, collect_hostlist, numerically_sorted, BadHostlist, LIBRARY_VERSION
 
 def func_union(args):
     return reduce(operator.or_, args)
@@ -60,18 +60,32 @@ op.add_option("-x", "--symmetric-difference",
 op.add_option("-w", "--expand",
               action="store_true",
               help="output the results as an expanded list")
+op.add_option("-s", "--separator",
+              action="store", type="string",  default="\n",
+              help="separator to use between hostnames when outputting an expanded list (default is newline)")
+op.add_option("-p", "--prepend",
+              action="store", type="string",  default="",
+              help="string to prepend to each hostname when outputting an expanded list")
+op.add_option("-a", "--append",
+              action="store", type="string",  default="",
+              help="string to append to each hostname when outputting an expanded list")
 op.add_option("-c", "--collapse",
               action="store_false", dest="expand",
               help="output the results as a hostlist expression (default)")
 op.add_option("-n", "--count",
               action="store_true",
               help="output the number of hosts instead of a hostlist")
+op.add_option("--version",
+              action="store_true",
+              help="show version")
 (opts, args) = op.parse_args()
 
-func = opts.func
+if opts.version:
+    print "Version %s (library version %s)" % (UTILITY_VERSION,
+                                               LIBRARY_VERSION)
+    sys.exit()
 
 func_args  = []
-
 try:
     for a in args:
         if a == "-":
@@ -88,13 +102,13 @@ if not func_args:
     op.print_help()
     sys.exit(os.EX_USAGE)
 
-res = func(func_args)
+res = opts.func(func_args)
 
 if opts.count:
     print len(res)
 elif opts.expand:
-    for host in numerically_sorted(res):
-        print host
+    print opts.separator.join([opts.prepend + host + opts.append
+                               for host in numerically_sorted(res)])
 else:
     try:
         print collect_hostlist(res)

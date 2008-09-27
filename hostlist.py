@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 #
 # Hostlist library
-#
-# Version 1.2
-#
+
+LIBRARY_VERSION="1.2.9.1"
+
 # Copyright (C) 2008 Kent Engström <kent@nsc.liu.se> and
 #                    Thomas Bellman <bellman@nsc.liu.se>,
 #                    National Supercomputer Centre
