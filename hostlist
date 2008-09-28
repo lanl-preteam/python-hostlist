@@ -3,7 +3,7 @@
 #
 # Hostlist utility
 
-UTILITY_VERSION="1.2.9.1"
+UTILITY_VERSION="1.2.9.2"
 
 # Copyright (C) 2008 Kent Engström <kent@nsc.liu.se> and
 #                    Thomas Bellman <bellman@nsc.liu.se>,
@@ -57,9 +57,15 @@ op.add_option("-d", "--difference",
 op.add_option("-x", "--symmetric-difference",
               action="store_const", dest="func", const=func_xor,
               help="compute the symmetric difference between the first hostlist argument and the rest")
+op.add_option("-c", "--collapse",
+              action="store_false", dest="expand",
+              help="output the result as a hostlist expression (default)")
+op.add_option("-n", "--count",
+              action="store_true",
+              help="output the number of hosts instead of a hostlist")
 op.add_option("-w", "--expand",
               action="store_true",
-              help="output the results as an expanded list")
+              help="output the result as an expanded list of hostnames")
 op.add_option("-s", "--separator",
               action="store", type="string",  default="\n",
               help="separator to use between hostnames when outputting an expanded list (default is newline)")
@@ -69,12 +75,6 @@ op.add_option("-p", "--prepend",
 op.add_option("-a", "--append",
               action="store", type="string",  default="",
               help="string to append to each hostname when outputting an expanded list")
-op.add_option("-c", "--collapse",
-              action="store_false", dest="expand",
-              help="output the results as a hostlist expression (default)")
-op.add_option("-n", "--count",
-              action="store_true",
-              help="output the number of hosts instead of a hostlist")
 op.add_option("--version",
               action="store_true",
               help="show version")

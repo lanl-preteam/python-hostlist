@@ -1,0 +1,103 @@
+.TH hostlist 1 NSC
+.SH NAME
+hostlist \- handle LLNL hostlist expressions
+.SH SYNOPSIS
+.B hostlist
+.RI [ OPTION "]... [" HOSTLIST ]...
+.SH DESCRIPTION
+Perform a set operation (union, intersection, difference or symmetric
+difference) on the given hostlists. Output the result as a hostlist, 
+a count of hostnames or an expanded list of hostnames.
+
+If "-" is used instead of a hostlist argument, an arbitrary number of
+hostlists are read from stdin and used as if they had been present
+on the command line.
+.SH OPTIONS
+.TP
+.B -u, --union
+Compute the union of the hostlists. A hostname is present in
+the output if it is included in at least one of the hostlists. This is
+the default operation.
+.TP
+.B -i, --intersection
+Compute the intersection of the hostlists. A hostname is present in the
+output if it is included in all the hostlists.
+.TP
+.B -d, --difference
+Compute the difference of the hostlists. A hostname is present in the
+output if it is included in the first hostlist but not any of the following.
+.TP
+.B -x, --symmetric-difference
+Compute the symmetric difference of the hostlists. A hostname is present in the
+output if it is included in an odd number of the hostlists.
+.TP
+.B -c, --collapse
+Output the result as a hostlist expression. This is the default.
+.TP
+.B -n, --count
+Output the number of hostnames in the result.
+.TP
+.B -w, --expand
+Output the result as an expanded list of hostnames.
+.TP
+.BI "-s " SEPARATOR ", --separator=" SEPARATOR
+Use
+.I SEPARATOR
+as the separator between the hostnames in the expanded list.
+The default is a newline.
+.TP
+.BI "-p " PREPEND ", --prepend=" PREPEND
+Output
+.I PREPEND
+before each hostname in the expanded list.
+The default is to prepend nothing.
+.TP
+.BI "-a " APPEND ", --append=" APPEND
+Output
+.I APPEND
+after each hostname in the expanded list.
+The default is to append nothing.
+.TP
+.B --version
+Show the version of the utility and the underlying Python library.
+.SH EXAMPLES
+.TP
+Output the union of n[10-19] and n[15-24] (which is n[10-24]):
+.B hostlist
+n[10-19] n[15-24]
+.TP
+Output the result of removing n15 and n[17-18] from n[1-20] \
+(which is n[1-14,16,19-20]):
+.B hostlist
+-d n[1-20] n15 n[17-18]
+.TP
+Output the result as an expanded list of hostnames (one hostname per line):
+.B hostlist
+-d -w n[1-20] n15 n[17-18]
+.TP
+Output the result as an expanded list of hostnames separated by commas:
+.B hostlist
+-d -w -s, n[1-20] n15 n[17-18]
+.TP
+Output the result as an expanded list of hostnames (followed by space and \
+the digit "8") separated by spaces:
+.B hostlist
+-d -w -s " " -a " 8" n[1-20] n15 n[17-18]
+.SH AUTHOR
+Written by Kent Engström <kent@nsc.liu.se>.
+
+The program is published at http://www.nsc.liu.se/~kent/python-hostlist/
+.SH SEE ALSO
+The hostlist syntax is used by 
+. B SLURM
+(https://computing.llnl.gov/linux/slurm/)
+and
+.B Pdsh
+(https://computing.llnl.gov/linux/pdsh.html)
+as well as related projects.
+
+See the
+.B HOSTLIST EXPRESSIONS
+section of the
+.BR pdsh (1)
+manual page for a short introduction to the hostlist syntax.

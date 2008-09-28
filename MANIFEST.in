@@ -2,3 +2,4 @@ include COPYING
 include README
 include CHANGES
 include python-hostlist.spec
+include hostlist.1
