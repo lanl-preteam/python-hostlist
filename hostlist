@@ -3,7 +3,7 @@
 #
 # Hostlist utility
 
-UTILITY_VERSION="1.2.9.2"
+UTILITY_VERSION="1.2.9.3"
 
 # Copyright (C) 2008 Kent Engström <kent@nsc.liu.se> and
 #                    Thomas Bellman <bellman@nsc.liu.se>,
@@ -63,9 +63,13 @@ op.add_option("-c", "--collapse",
 op.add_option("-n", "--count",
               action="store_true",
               help="output the number of hosts instead of a hostlist")
-op.add_option("-w", "--expand",
+op.add_option("-e", "--expand",
               action="store_true",
               help="output the result as an expanded list of hostnames")
+op.add_option("-w",
+              action="store_true",
+              dest="expand_deprecated",
+              help="DEPRECATED version of -e/--expand")
 op.add_option("-s", "--separator",
               action="store", type="string",  default="\n",
               help="separator to use between hostnames when outputting an expanded list (default is newline)")
@@ -102,11 +106,14 @@ if not func_args:
     op.print_help()
     sys.exit(os.EX_USAGE)
 
+if opts.expand_deprecated:
+    sys.stderr.write("WARNING: Option -w is deprecated. Use -e or --expand instead!\n")
+
 res = opts.func(func_args)
 
 if opts.count:
     print len(res)
-elif opts.expand:
+elif opts.expand or opts.expand_deprecated:
     print opts.separator.join([opts.prepend + host + opts.append
                                for host in numerically_sorted(res)])
 else:

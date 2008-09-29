@@ -3,7 +3,7 @@
 #
 # Hostlist library
 
-LIBRARY_VERSION="1.2.9.2"
+LIBRARY_VERSION="1.2.9.3"
 
 # Copyright (C) 2008 Kent Engström <kent@nsc.liu.se> and
 #                    Thomas Bellman <bellman@nsc.liu.se>,
