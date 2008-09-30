@@ -16,9 +16,10 @@ BuildArch:      noarch
 BuildRequires:  python-devel
 
 %description
-The hostlist.py module knows how to expand and collect LLNL hostlist
-expressions. The package also includes the 'hostlist' binary which can be
-used to collect/expand hostlists and perform set operations on them.
+The hostlist.py module knows how to expand and collect hostlist
+expressions. The package also includes the 'hostlist' binary which can
+be used to collect/expand hostlists and perform set operations on
+them.
 
 %prep
 %setup -q

@@ -3,7 +3,7 @@
 #
 # Hostlist utility
 
-UTILITY_VERSION="1.2.9.2"
+__version__="1.2.9.2"
 
 # Copyright (C) 2008 Kent Engström <kent@nsc.liu.se> and
 #                    Thomas Bellman <bellman@nsc.liu.se>,
@@ -29,7 +29,7 @@ import os
 import optparse
 import operator
 
-from hostlist import expand_hostlist, collect_hostlist, numerically_sorted, BadHostlist, LIBRARY_VERSION
+from hostlist import expand_hostlist, collect_hostlist, numerically_sorted, BadHostlist, __version__ as library_version
 
 def func_union(args):
     return reduce(operator.or_, args)
@@ -43,7 +43,7 @@ def func_difference(args):
 def func_xor(args):
     return reduce(operator.xor, args)
 
-op = optparse.OptionParser(usage="usage: %prog [options] {hostlist arguments}")
+op = optparse.OptionParser(usage="usage: %prog [OPTION]... [HOSTLIST]...")
 op.add_option("-u", "--union",
               action="store_const", dest="func", const=func_union,
               default=func_union,
@@ -81,8 +81,8 @@ op.add_option("--version",
 (opts, args) = op.parse_args()
 
 if opts.version:
-    print "Version %s (library version %s)" % (UTILITY_VERSION,
-                                               LIBRARY_VERSION)
+    print "Version %s (library version %s)" % (__version__,
+                                               library_version)
     sys.exit()
 
 func_args  = []
