@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Hostlist library
-
-LIBRARY_VERSION="1.2.9.4"
-
+#
 # Copyright (C) 2008 Kent Engström <kent@nsc.liu.se> and
 #                    Thomas Bellman <bellman@nsc.liu.se>,
 #                    National Supercomputer Centre
@@ -24,8 +22,18 @@ LIBRARY_VERSION="1.2.9.4"
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-# WARNING: The behaviour in corner cases have not been compared for
-# compatibility with pdsh/dshbak/SLURM et al.
+"""Handle hostlist expressions.
+
+This module provides operations to expand and collect hostlist
+expressions.
+
+The hostlist expression syntax is the same as in several programs
+developed at LLNL (https://computing.llnl.gov/linux/). However in
+corner cases the behaviour of this module have not been compared for
+compatibility with pdsh/dshbak/SLURM et al.
+"""
+
+__version__ = "1.2.9.5"
 
 import re
 import itertools
@@ -39,7 +47,7 @@ MAX_SIZE = 100000
 # Hostlist expansion
 
 def expand_hostlist(hostlist, allow_duplicates=False, sort=False):
-    """Expand a Livermore hostlist string to a Python list.
+    """Expand a hostlist expression string to a Python list.
 
     Exemple: expand_hostlist("n[9-11],d[01-02]") ==> 
              ['n9', 'n10', 'n11', 'd01', 'd02']

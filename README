@@ -1,5 +1,5 @@
-The Python module hostlist.py knows how to expand and collect
-LLNL hostlist expressions. Example:
+The Python module hostlist.py knows how to expand and collect hostlist
+expressions. Example:
 
   % python
   Python 2.5.1 (r251:54863, Jul 10 2008, 17:24:48) 
