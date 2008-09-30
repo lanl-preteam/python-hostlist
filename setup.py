@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name         = "python-hostlist",
-      version      = "1.2.9.6", # Change in hostlist{,.py,.1}, python-hostlist.spec too!
+      version      = "1.3", # Change in hostlist{,.py,.1}, python-hostlist.spec too!
       description  = "Python module for hostlist handling",
       long_description = "The hostlist.py module knows how to expand and collect hostlist expressions.",
       author       = "Kent Engström",

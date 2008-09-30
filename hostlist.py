@@ -3,8 +3,9 @@
 #
 # Hostlist library
 #
-# Copyright (C) 2008 Kent Engström <kent@nsc.liu.se> and
-#                    Thomas Bellman <bellman@nsc.liu.se>,
+# Copyright (C) 2008 Kent Engström <kent@nsc.liu.se>,
+#                    Thomas Bellman <bellman@nsc.liu.se> and
+#                    Pär Andersson <paran@nsc.liu.se>,
 #                    National Supercomputer Centre
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -33,7 +34,7 @@ corner cases the behaviour of this module have not been compared for
 compatibility with pdsh/dshbak/SLURM et al.
 """
 
-__version__ = "1.2.9.6"
+__version__ = "1.3"
 
 import re
 import itertools
