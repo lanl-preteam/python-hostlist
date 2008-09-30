@@ -33,7 +33,7 @@ corner cases the behaviour of this module have not been compared for
 compatibility with pdsh/dshbak/SLURM et al.
 """
 
-__version__ = "1.2.9.5"
+__version__ = "1.2.9.6"
 
 import re
 import itertools
