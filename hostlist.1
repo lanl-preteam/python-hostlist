@@ -1,4 +1,4 @@
-.TH hostlist 1 NSC
+.TH hostlist 1 "Version 1.2.9.4"
 .SH NAME
 hostlist \- handle LLNL hostlist expressions
 .SH SYNOPSIS
@@ -76,16 +76,16 @@ Output the result of removing n15 and n[17-18] from n[1-20] \
 .TP
 Output the result as an expanded list of hostnames (one hostname per line):
 .B hostlist
--d -w n[1-20] n15 n[17-18]
+-d -e n[1-20] n15 n[17-18]
 .TP
 Output the result as an expanded list of hostnames separated by commas:
 .B hostlist
--d -w -s, n[1-20] n15 n[17-18]
+-d -e -s, n[1-20] n15 n[17-18]
 .TP
 Output the result as an expanded list of hostnames (followed by space and \
 the digit "8") separated by spaces:
 .B hostlist
--d -w -s " " -a " 8" n[1-20] n15 n[17-18]
+-d -e -s " " -a " 8" n[1-20] n15 n[17-18]
 .SH AUTHOR
 Written by Kent Engström <kent@nsc.liu.se>.
 
