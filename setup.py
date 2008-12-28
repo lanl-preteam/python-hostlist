@@ -2,8 +2,20 @@
 
 from distutils.core import setup
 
+# Python 2/3 installation trick from .../Demo/distutils/test2to3
+try:
+    from distutils.command.build_py import build_py_2to3 as build_py
+except ImportError:
+    from distutils.command.build_py import build_py
+
+try:
+    from distutils.command.build_scripts import build_scripts_2to3 as build_scripts
+except ImportError:
+    from distutils.command.build_scripts import build_scripts
+
+
 setup(name         = "python-hostlist",
-      version      = "1.3", # Change in hostlist{,.py,.1}, python-hostlist.spec too!
+      version      = "1.4", # Change in hostlist{,.py,.1}, python-hostlist.spec too!
       description  = "Python module for hostlist handling",
       long_description = "The hostlist.py module knows how to expand and collect hostlist expressions.",
       author       = "Kent Engström",
@@ -16,8 +28,13 @@ setup(name         = "python-hostlist",
                       'License :: OSI Approved :: GNU General Public License (GPL)',
                       'Topic :: System :: Clustering',
                       'Topic :: System :: Systems Administration',
+                      'Programming Language :: Python :: 2',
+                      'Programming Language :: Python :: 3',
                       ],
       py_modules   = ["hostlist"],
       scripts      = ["hostlist"],
       data_files   = [("share/man/man1", ["hostlist.1"])],
+      cmdclass     = {'build_py':build_py,
+                      'build_scripts':build_scripts,
+                      }
       )

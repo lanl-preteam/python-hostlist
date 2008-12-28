@@ -1,8 +1,8 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-hostlist
-Version:        1.3
-Release:        1
+Version:        1.4
+Release:        2
 Summary:        Python module for hostlist handling
 Vendor:         NSC
 
