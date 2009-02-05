@@ -3,7 +3,7 @@
 #
 # Hostlist utility
 
-__version__ = "1.4"
+__version__ = "1.4.9.1"
 
 # Copyright (C) 2008 Kent Engström <kent@nsc.liu.se>,
 #                    Thomas Bellman <bellman@nsc.liu.se> and

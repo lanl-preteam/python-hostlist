@@ -15,7 +15,7 @@ except ImportError:
 
 
 setup(name         = "python-hostlist",
-      version      = "1.4", # Change in hostlist{,.py,.1}, python-hostlist.spec too!
+      version      = "1.4.9.1", # Change in hostlist{,.py,.1}, hostgrep, python-hostlist.spec too!
       description  = "Python module for hostlist handling",
       long_description = "The hostlist.py module knows how to expand and collect hostlist expressions.",
       author       = "Kent Engström",
@@ -32,7 +32,7 @@ setup(name         = "python-hostlist",
                       'Programming Language :: Python :: 3',
                       ],
       py_modules   = ["hostlist"],
-      scripts      = ["hostlist"],
+      scripts      = ["hostlist", "hostgrep"],
       data_files   = [("share/man/man1", ["hostlist.1"])],
       cmdclass     = {'build_py':build_py,
                       'build_scripts':build_scripts,
