@@ -101,8 +101,10 @@ func_args  = []
 try:
     for a in args:
         if a == "-":
+            stdin_hosts = set()
             for a in sys.stdin.read().split():
-                func_args.append(set(expand_hostlist(a)))
+                stdin_hosts |= set(expand_hostlist(a))
+            func_args.append(stdin_hosts)
         else:
             func_args.append(set(expand_hostlist(a)))
 except BadHostlist, e:
