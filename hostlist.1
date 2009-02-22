@@ -1,4 +1,4 @@
-.TH hostlist 1 "Version 1.4"
+.TH hostlist 1 "Version #VERSION#"
 .SH NAME
 hostlist \- handle hostlist expressions
 .SH SYNOPSIS
@@ -10,8 +10,8 @@ difference) on the given hostlists. Output the result as a hostlist,
 a count of hostnames or an expanded list of hostnames.
 
 If "-" is used instead of a hostlist argument, an arbitrary number of
-hostlists are read from stdin and used as if they had been present
-on the command line.
+hostlists are read from stdin. The union of them is used as if it had
+been present on the command line as a single hostlist argument.
 .SH OPTIONS
 .TP
 .B -u, --union

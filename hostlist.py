@@ -34,7 +34,7 @@ corner cases the behaviour of this module have not been compared for
 compatibility with pdsh/dshbak/SLURM et al.
 """
 
-__version__ = "1.4"
+__version__ = "#VERSION#"
 
 import re
 import itertools
