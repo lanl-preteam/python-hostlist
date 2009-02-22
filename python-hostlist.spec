@@ -47,4 +47,5 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/hostlist
 /usr/bin/hostgrep
 /usr/share/man/man1/hostlist.1.gz
+/usr/share/man/man1/hostgrep.1.gz
 %changelog
