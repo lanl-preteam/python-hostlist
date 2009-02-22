@@ -1,11 +1,11 @@
-Version 1.5 (2009-??-??)
+Version 1.5 (2009-02-22)
 
     Make each "-" on the command line count as one hostlist argument.
     If multiple hostslists are given on stdin they are combined to a
     union hostlist before being used in the way requested by the
     options.
 
-    Add hostgrep utility.
+    Add hostgrep utility to search for lines matching a hostlist.
 
     Make the build system (used when building tar.gz and RPMs from the
     source code held in git) smarter.
