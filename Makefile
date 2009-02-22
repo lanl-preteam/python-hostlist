@@ -3,7 +3,7 @@ VERSIONED_FILES = hostlist.py hostlist hostlist.1 \
 		  setup.py python-hostlist.spec README 
 NON_VERSIONED_FILES = test COPYING MANIFEST.in CHANGES Makefile
 
-VERSION = 1.5
+VERSION = 1.5.9.1
 RELEASE = 1
 
 all:
@@ -31,7 +31,7 @@ pypi: prepare
 	(cd versioned; make pypi-versioned)
 
 pypi-versioned:
-	python setup.py sdist register
+	python setup.py sdist upload
 
 clean:
 	rm -rf versioned
