@@ -13,9 +13,16 @@ try:
 except ImportError:
     from distutils.command.build_scripts import build_scripts
 
+# Version
+VERSION = "#VERSION#"
+if "#" in VERSION:
+    import sys
+    sys.stderr.write("Bad version %s\n" % VERSION)
+    sys.exit(1)
+
 
 setup(name         = "python-hostlist",
-      version      = "1.4.9.1", # Change in hostlist{,.py,.1}, hostgrep, python-hostlist.spec too!
+      version      = VERSION,
       description  = "Python module for hostlist handling",
       long_description = "The hostlist.py module knows how to expand and collect hostlist expressions.",
       author       = "Kent Engström",

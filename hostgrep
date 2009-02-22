@@ -3,7 +3,7 @@
 #
 # Grep-like utility understanding hostlists
 
-__version__ = "1.4.9.1"
+__version__ = "#VERSION#"
 
 # Copyright (C) 2009 Kent Engström <kent@nsc.liu.se>
 # 
