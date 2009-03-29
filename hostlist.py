@@ -342,16 +342,16 @@ def numerically_sorted(l):
 
     return sorted(l, key=numeric_sort_key)
 
-def int_if_possible(x):
-    try:
-        return int(x)
-    except:
-        return x
-
+nsk_re = re.compile("([0-9]+)|([^0-9]+)")
 def numeric_sort_key(x):
-    return [int_if_possible(n) for n in re.findall("([0-9]+|[^0-9]+)", x)]
+    return [handle_int_nonint(i_ni) for i_ni in nsk_re.findall(x)]
 
-    
+def handle_int_nonint(int_nonint_tuple):
+    if int_nonint_tuple[0]:
+        return int(int_nonint_tuple[0])
+    else:
+        return int_nonint_tuple[1]
+
 #
 # Keep this part to tell users where the command line interface went
 #
