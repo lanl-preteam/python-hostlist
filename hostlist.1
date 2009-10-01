@@ -43,6 +43,13 @@ Output the result as an expanded list of hostnames.
 .B -w
 Output the result as an expanded list of hostnames. This option is deprecated. Use -e or --expand instead.
 .TP
+.B -q, --quiet
+Output nothing. This option is useful together with
+.BR --non-empty .
+.TP
+.B -0, --non-empty
+Return success if the resulting hostlist is non-empty and failure if its empty.
+.TP
 .BI "-s " SEPARATOR ", --separator=" SEPARATOR
 Use
 .I SEPARATOR
@@ -86,6 +93,11 @@ Output the result as an expanded list of hostnames (followed by space and \
 the digit "8") separated by spaces:
 .B hostlist
 -d -e -s " " -a " 8" n[1-20] n15 n[17-18]
+.TP
+Print INCLUDED as n11 is in n[10-20]:
+if 
+.B hostlist
+-q0 -i n11 n[10-20]; then echo INCLUDED; else echo NOT INCLUDED; fi
 .SH AUTHOR
 Written by Kent Engström <kent@nsc.liu.se>.
 

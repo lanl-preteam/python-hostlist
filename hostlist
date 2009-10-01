@@ -78,6 +78,12 @@ op.add_option("-w",
               action="store_true",
               dest="expand_deprecated",
               help="DEPRECATED version of -e/--expand")
+op.add_option("-q", "--quiet",
+              action="store_true",
+              help="output nothing (useful with --non-empty)")
+op.add_option("-0", "--non-empty",
+              action="store_true",
+              help="return success only if the resulting hostlist is non-empty")
 op.add_option("-s", "--separator",
               action="store", type="string",  default="\n",
               help="separator to use between hostnames when outputting an expanded list (default is newline)")
@@ -121,7 +127,9 @@ if opts.expand_deprecated:
 
 res = opts.func(func_args)
 
-if opts.count:
+if opts.quiet:
+    pass
+elif opts.count:
     print len(res)
 elif opts.expand or opts.expand_deprecated:
     print opts.separator.join([opts.prepend + host + opts.append
@@ -132,3 +140,6 @@ else:
     except BadHostlist, e:
         sys.stderr.write("Bad hostname encountered: %s\n" % e.args)
         sys.exit(os.EX_DATAERR)
+
+if opts.non_empty and len(res) == 0:
+    sys.exit(os.EX_NOINPUT)
