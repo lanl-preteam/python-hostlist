@@ -1,3 +1,9 @@
+Version 1.6 (2009-10-02)
+
+    Add --non-empty and --quiet.
+
+    Optimize numerically_sorted.
+
 Version 1.5 (2009-02-22)
 
     Make each "-" on the command line count as one hostlist argument.
