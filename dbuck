@@ -12,6 +12,8 @@ optp.add_option("-k", "--key",
 optp.add_option("-n", "--nbuckets",
                 action="store", type="int", default=5,
                 help="number of buckets to use (default: %default)")
+optp.add_option("-v", "--verbose",
+                action="store_true", default=False)
 
 (opts, args) = optp.parse_args(sys.argv[1:])
 
@@ -21,7 +23,8 @@ if args != []:
 
 data = sys.stdin.readlines()
 
-#print data
+if opts.verbose:
+    print "Info: read in %i lines of data" % len(data)
 
 if not opts.key:
     sline = data[0].strip().split()
@@ -36,14 +39,14 @@ if not opts.key:
         except ValueError:
             pass
         if tmp:
+            if opts.verbose:
+                print "Info: auto-detected data   : col %i" % i
             opts.key = i
             break
     
     if not opts.key:
         print "Error: no key given and/or autodetect failure"
         sys.exit(1)
-
-#print opts
 
 valuelist = []
 for line in data:
@@ -55,9 +58,9 @@ valuelist.sort()
 minvalue = valuelist[0]
 maxvalue = valuelist[-1]
 
-#print valuelist
-#print "min: %i" % minvalue
-#print "max: %i" % maxvalue
+if opts.verbose:
+    print "Info: smallest value found : %i" % minvalue
+    print "Info: largest value found  : %i" % maxvalue
 
 nval = maxvalue - minvalue + 1
 
@@ -84,12 +87,9 @@ valuedict = {}
 for line in data:
     val = int(line.strip().split()[opts.key])
     node = string.strip(line.strip().split()[0], ':')
-#    print "node/val: %s/%i" % (node, val)
     if not val in valuedict:
         valuedict[val] = []
     valuedict[val].append(node)
-
-#print valuedict
 
 for b in range(len(buckets)):
 #    print buckets[b]['start']
@@ -98,6 +98,8 @@ for b in range(len(buckets)):
         if i in valuedict:
             buckets[b]['nodes'].extend(valuedict[i])
     
+if opts.verbose:
+    print "LOW-HI COUNT HOSTLIST"
 for bucket in buckets:
     print "%i-%i: %3i %s" % (bucket['start'], bucket['end'],
                             len(bucket['nodes']), collect_hostlist(bucket['nodes']))
