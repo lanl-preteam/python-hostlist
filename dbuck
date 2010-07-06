@@ -40,7 +40,7 @@ if not opts.key:
             pass
         if tmp:
             if opts.verbose:
-                print "Info: auto-detected data   : col %i" % i
+                print "Info: auto-detect found data at column %i" % i
             opts.key = i
             break
     
@@ -59,8 +59,8 @@ minvalue = valuelist[0]
 maxvalue = valuelist[-1]
 
 if opts.verbose:
-    print "Info: smallest value found : %i" % minvalue
-    print "Info: largest value found  : %i" % maxvalue
+    print "Info: smallest value found was %i" % minvalue
+    print "Info: largest value found was %i" % maxvalue
 
 nval = maxvalue - minvalue + 1
 
@@ -68,6 +68,9 @@ if opts.nbuckets < 1 or opts.nbuckets > nval:
     print "Error: number of buckets(%i) not suitable for number of values in data(%i)" % (
         opts.nbuckets, nval)
     sys.exit(1)
+
+if opts.verbose:
+    print "Info: will use %i buckets" % opts.nbuckets
 
 buckets = range(opts.nbuckets)
 nvpb = nval / float(opts.nbuckets)
@@ -97,9 +100,31 @@ for b in range(len(buckets)):
     for i in range(buckets[b]['start'], buckets[b]['end'] + 1):
         if i in valuedict:
             buckets[b]['nodes'].extend(valuedict[i])
-    
-if opts.verbose:
-    print "LOW-HI COUNT HOSTLIST"
+
+maxnperbucket = 1
 for bucket in buckets:
-    print "%i-%i: %3i %s" % (bucket['start'], bucket['end'],
-                            len(bucket['nodes']), collect_hostlist(bucket['nodes']))
+    nperbucket = len(bucket['nodes'])
+    maxnperbucket = max(maxnperbucket, nperbucket)
+
+ncharvalue = max(len(str(maxvalue)), 3)
+ncharnodecnt = max(len(str(maxnperbucket)), 3)
+
+#print "ncharvalue: %i" % ncharvalue
+#print "ncharnodecnt: %i" % ncharnodecnt
+
+if opts.verbose:
+    print
+    print "%sLOW-%sHI: %sCNT  HOSTLIST" % (" " * (ncharvalue - 3),
+                                           " " * (ncharvalue - 2),
+                                           " " * (ncharnodecnt - 3))
+    print "-" * 80
+
+# Main output print
+for bucket in buckets:
+    pad1 = (ncharvalue - len(str(bucket['start']))) * " "
+    pad2 = (ncharvalue - len(str(bucket['end']))) * " "
+    pad3 = (ncharnodecnt - len(str(len(bucket['nodes'])))) * " "
+    print "%s%i-%s%i: %s%i  %s" % (pad1, bucket['start'],
+                                   pad2, bucket['end'],
+                                   pad3, len(bucket['nodes']),
+                                   collect_hostlist(bucket['nodes']))
