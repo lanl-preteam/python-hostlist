@@ -14,6 +14,9 @@ optp.add_option("-n", "--nbuckets",
                 help="number of buckets to use (default: %default)")
 optp.add_option("-v", "--verbose",
                 action="store_true", default=False)
+optp.add_option("-t", "--field-separators",
+                action="store", type="string", default="",
+                help="_additional_ field separators (default: \"\")")
 
 (opts, args) = optp.parse_args(sys.argv[1:])
 
@@ -25,6 +28,13 @@ data = sys.stdin.readlines()
 
 if opts.verbose:
     print "Info: read in %i lines of data" % len(data)
+
+for char in opts.field_separators:
+    if opts.verbose:
+        print "Info: adding additional field separator: \"%s\"" % char
+    for i in range(len(data)):
+        tmp = data[i].replace(char, " ")
+        data[i] = tmp
 
 if not opts.key:
     sline = data[0].strip().split()
