@@ -35,10 +35,10 @@ if not opts.key:
     for i in [ x + 1 for x in range(len(sline[1:])) ]:
         tmp = None
         try:
-            tmp = int(sline[i])
+            tmp = int(round(float(sline[i])))
         except ValueError:
             pass
-        if tmp:
+        if tmp != None:
             if opts.verbose:
                 print "Info: auto-detect found data at column %i" % i
             opts.key = i
@@ -51,7 +51,7 @@ if not opts.key:
 valuelist = []
 for line in data:
     sline = line.strip().split()
-    valuelist.append(int(sline[opts.key]))
+    valuelist.append(int(round(float(sline[opts.key]))))
 
 valuelist.sort()
 
@@ -88,7 +88,7 @@ for b in buckets:
 
 valuedict = {}
 for line in data:
-    val = int(line.strip().split()[opts.key])
+    val = int(round(float(line.strip().split()[opts.key])))
     node = string.strip(line.strip().split()[0], ':')
     if not val in valuedict:
         valuedict[val] = []
