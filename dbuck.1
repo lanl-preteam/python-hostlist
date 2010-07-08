@@ -1,0 +1,51 @@
+.TH dbuck 1 "Version #VERSION#"
+
+.SH NAME
+dbuck \- format output from pdsh command or similar
+
+.SH SYNOPSIS
+.B dbuck
+.RI [ OPTION "]... "
+
+.SH DESCRIPTION
+Reads data from stdin and outputs a human read-able report on stdout.
+
+dbuck is similar to dshbak but is targeted at numerical data such as temperatures, power consumption, loadavg etc. Output is a bucket sorted table, a sort of histogram.
+
+Data is assumed to be N lines of data one for each host/entity. By default dbuck will autodetect the column to use (first one that can be converted to a number) and sort everything into five buckets.
+
+.SH OPTIONS
+.TP
+.B -h, --help
+Print help message
+.TP
+.BI "-n " NBUCKETS ", --nbuckets=" NBUCKETS
+Number of buckets to use (default: 5)
+.TP
+.BI "-k " KEY ", --key=" KEY
+Use data at position KEY (default: auto)
+.TP
+.BI "-t " FIELD_SEPARATORS ", --field-separators=" FIELD_SEPARATORS
+Additional field separators, space not optional (default: "")
+.TP
+.B -v, --verbose
+Be verbose
+
+.SH EXAMPLES
+.TP
+
+.SH BUGS
+The program does not currently handle input lines of a format different from the first line.
+
+.SH AUTHOR
+Written by Peter Kjellström <cap@nsc.liu.se>.
+
+The program is published at http://www.nsc.liu.se/~kent/python-hostlist/
+
+.SH SEE ALSO
+.I hostlist
+(1)
+.I pdsh
+(1)
+.I dshbak
+(1)
