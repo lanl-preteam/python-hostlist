@@ -29,6 +29,7 @@ import sys
 import os
 import optparse
 import operator
+import re
 
 from hostlist import expand_hostlist, collect_hostlist, numerically_sorted, BadHostlist, __version__ as library_version
 
@@ -93,6 +94,9 @@ op.add_option("-p", "--prepend",
 op.add_option("-a", "--append",
               action="store", type="string",  default="",
               help="string to append to each hostname when outputting an expanded list")
+op.add_option("-S", "--substitute",
+              action="store", type="string",
+              help="regular expression substitution ('from,to') to apply to each hostname when outputting an expanded list")
 op.add_option("--version",
               action="store_true",
               help="show version")
@@ -132,8 +136,17 @@ if opts.quiet:
 elif opts.count:
     print len(res)
 elif opts.expand or opts.expand_deprecated:
+    sorted_hosts = numerically_sorted(res)
+    if opts.substitute:
+        try:
+            from_re, to = opts.substitute.split(",", 1)
+            sorted_hosts = [re.sub(from_re, to, host) for host in sorted_hosts]
+        except (ValueError, re.error):
+            sys.stderr.write("Bad --substitute option: '%s'\n" % opts.substitute)
+            sys.exit(os.EX_DATAERR)
+
     print opts.separator.join([opts.prepend + host + opts.append
-                               for host in numerically_sorted(res)])
+                               for host in sorted_hosts])
 else:
     try:
         print collect_hostlist(res)

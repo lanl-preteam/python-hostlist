@@ -68,6 +68,15 @@ Output
 after each hostname in the expanded list.
 The default is to append nothing.
 .TP
+.BI "-S " FROM,TO ", --substitute=" FROM,TO
+Apply a regular expression substitution to each host in the expanded list,
+replacing all
+.I FROM
+with
+.IR TO .
+The substitution is done before appending and/or prepending strings.
+The default is to do no substitution.
+.TP
 .B --version
 Show the version of the utility and the underlying Python library.
 .SH EXAMPLES
@@ -93,6 +102,10 @@ Output the result as an expanded list of hostnames (followed by space and \
 the digit "8") separated by spaces:
 .B hostlist
 -d -e -s " " -a " 8" n[1-20] n15 n[17-18]
+.TP
+Expand a hostlist, replacing "n" with "ni":
+.B hostlist
+-e -S n,ni n[1-20]
 .TP
 Print INCLUDED as n11 is in n[10-20]:
 if 
