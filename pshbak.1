@@ -1,0 +1,77 @@
+.TH pshbak 1 "Version 1.8"
+
+.SH NAME
+pshbak \- Format output from pdsh command
+
+.SH SYNOPSIS
+.B pshbak
+.RI [ OPTION "]... " 
+
+.SH DESCRIPTION
+.B pshbak
+formats output from parallel shells such as 
+.BR pdsh 
+or 
+.BR dsh , 
+into a more readable output. It can be used as a drop-in replacement for
+.BR dshbak .
+
+Output from e.g.
+.BR pdsh ,
+where each line is prefixed by a hostname followed by a colon, 
+is read via stdin, collected per hostname, and printed in an
+per hostname fashion. 
+With the 
+.I -c
+option, hosts having identical output are collected and printed only once.
+
+
+.SH OPTIONS
+.TP
+.B -c
+Collect hosts having identical output. Makes identical output appear to 
+only once.
+.TP
+.B -d, --unified-diff
+Print only the most abundant output in full, and print any diverging output 
+as a unified diff relative the most abundant output. This mode of operation 
+implies the 
+.I -c
+option
+.TP
+.B -h, --help
+Display a brief help message.
+
+.SH EXAMPLES
+.TP
+Collect information about the running kernel version in a \
+compute cluster having  node names n1, n2, ... using pdsh and pshbak:
+.B pdsh 
+-w n[1-400] uname -r | 
+.B pshbak 
+-c
+
+
+.SH AUTHOR
+Written by Kent Engström <kent@nsc.liu.se>.
+
+The program is published at http://www.nsc.liu.se/~kent/python-hostlist/
+
+.SH SEE ALSO
+.I hostlist
+(1)
+
+
+The hostlist expression syntax is used by several programs developed at 
+.B LLNL
+(https://computing.llnl.gov/linux/), for example
+.B SLURM
+(https://computing.llnl.gov/linux/slurm/) and 
+.B Pdsh
+(http://code.google.com/p/pdsh/).
+
+See the
+.B HOSTLIST EXPRESSIONS
+section of the
+.BR pdsh (1)
+manual page for a short introduction to the hostlist syntax.

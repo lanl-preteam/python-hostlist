@@ -4,4 +4,5 @@ include CHANGES
 include python-hostlist.spec
 include hostlist.1
 include hostgrep.1
+include pshbak.1
 include MANIFEST.in
