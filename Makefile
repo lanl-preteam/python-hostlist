@@ -1,6 +1,7 @@
 VERSIONED_FILES = hostlist.py hostlist hostlist.1 \
 		  hostgrep hostgrep.1 \
 		  dbuck \
+		  pshbak pshbak.1 \
 		  setup.py python-hostlist.spec README 
 NON_VERSIONED_FILES = test COPYING MANIFEST.in CHANGES Makefile
 
