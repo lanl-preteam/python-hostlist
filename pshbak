@@ -144,7 +144,7 @@ if opts.unified_diff:
                                        lineterm='')) )
 
 
-elif opts.c:
+else:
     #
     # "Normal" mode, just print the output
     #
@@ -155,7 +155,3 @@ elif opts.c:
 
     for hr, ls in hldict.iteritems():
         pprint(hr, ls)
-
-
-
-
