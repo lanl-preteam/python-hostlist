@@ -42,12 +42,15 @@ def scan( ):
 
     Input lines are expected to be on the format
     "<hostname>:<rest of line>". Lines not matching that format
-    are simply ignored (same behavior as original dshbak).
+    are ignored by default (same behavior as original dshbak).
+
+    The linesplit-re is designed to match the original dshbak behavior. 
     """
 
-    linesplit = re.compile(r'^([A-Za-z0-9.-]+):(.*)$')
+    linesplit = re.compile(r'^ *([A-Za-z0-9.-]+) *: ?(.*)$')
     fd = sys.stdin
     hldic = { }
+    waste = [ ]
 
     for line in fd:
         m = linesplit.match(line)
@@ -59,9 +62,11 @@ def scan( ):
             else:
                 hldic[h] = l
 
-        # Ignore lines not matching the linesplit-re
-
-    return hldic
+        else:
+            # Put lines not matching the linesplit-re in the waste bin
+            waste.append(line.rstrip('\n'))
+    
+    return(hldic, '\n'.join(waste))
 
 
 def collect( hldic ):
@@ -88,8 +93,6 @@ def pprint(host, output):
     print host
     print hline
     print output
-
-
     
 
 
@@ -102,6 +105,9 @@ op.add_option("-c", action="store_true", help="Nodes with identical output are n
 op.add_option("-d", "--unified-diff", action="store_true",
               help="Print the abundant output in its full form, and all other outputs as a unified diff"\
               " relative the most abundant output. This option implies -c.")
+op.add_option("-g", "--with-garbage", action="store_true",
+              help="Collect and print also input not on the \"host : output\"-format."\
+              " Garbage output will be presented separated from host output.")
 op.add_option("-h", "--help", action="help", help="Show help")
 op.add_option("--version",
               action="store_true",
@@ -115,6 +121,17 @@ if opts.version:
 
 
 
+hldict, wbin = scan( )
+
+if opts.with_garbage and wbin:
+    #
+    # The user wants to see garbage-output, and it is non-empty.
+    # Print it before the host output regardless of diff/normal mode.
+    #
+
+    pprint('NON-FORMATTED OUTPUT', wbin)
+
+
 
 if opts.unified_diff:
     #
@@ -122,10 +139,10 @@ if opts.unified_diff:
     # other outputs as a unified diff relative O.
     #
 
-    hldict = collect(scan( ))
+    hldict = collect(hldict)
     hllist = [ (hr, ls, len(expand_hostlist(hr)))
                for hr, ls in hldict.iteritems() ]
-    hllist.sort( key = lambda x:x[2] )
+    hllist.sort( key = lambda x:x[2] )     # Sort w r t number of hosts per output
 
     if len(hllist) == 0:
         sys.exit()
@@ -148,10 +165,10 @@ else:
     #
     # "Normal" mode, just print the output
     #
-    hldict = scan( )
 
     if opts.c:
         hldict = collect(hldict)
 
     for hr, ls in hldict.iteritems():
         pprint(hr, ls)
+
