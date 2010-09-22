@@ -101,17 +101,24 @@ def pprint(host, output):
 op = optparse.OptionParser(usage="usage: %prog [OPTION]...",
                            add_help_option = False)
 
-op.add_option("-c", action="store_true", help="Nodes with identical output are not displayed twice")
+op.add_option("-c", action="store_true",
+              help="Collect identical output.")
+
 op.add_option("-d", "--unified-diff", action="store_true",
-              help="Print the abundant output in its full form, and all other outputs as a unified diff"\
-              " relative the most abundant output. This option implies -c.")
+              help="Print the most frequent output in its full form, "
+              "and all other outputs as unified diffs "
+              "relative the most frequent output. This option implies -c.")
+
 op.add_option("-g", "--with-garbage", action="store_true",
-              help="Collect and print also input not on the \"host : output\"-format."\
-              " Garbage output will be presented separated from host output.")
+              help="Also collect and print input not conforming to the "
+              ' "host : output"-format. '
+              "Garbage output will be presented separated from host output.")
+
 op.add_option("-h", "--help", action="help", help="Show help")
 op.add_option("--version",
               action="store_true",
               help="Show version")
+
 (opts, args) = op.parse_args()
 
 if opts.version:

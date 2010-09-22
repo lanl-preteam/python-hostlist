@@ -1,7 +1,7 @@
 .TH pshbak 1 "Version #VERSION#"
 
 .SH NAME
-pshbak \- Format output from pdsh command
+pshbak \- format output from pdsh command
 
 .SH SYNOPSIS
 .B pshbak
@@ -10,38 +10,42 @@ pshbak \- Format output from pdsh command
 .SH DESCRIPTION
 .B pshbak
 formats output from parallel shells such as 
-.BR pdsh 
-or 
+.B pdsh 
+and
 .BR dsh , 
 into a more readable output. It can be used as a drop-in replacement for
 .BR dshbak .
 
-Output from e.g.
+Output from 
 .BR pdsh ,
 where each line is prefixed by a hostname followed by a colon, 
-is read via stdin, collected per hostname, and printed in an
+is read via stdin, collected per hostname, and printed in a
 per hostname fashion. 
-With the 
-.I -c
-option, hosts having identical output are collected and printed only once.
+With the often used
+.B -c
+option, hosts having identical output are collected and the output is
+printed only once.
 
 
 .SH OPTIONS
 .TP
 .B -c
-Collect hosts having identical output. Makes identical output appear to 
-only once.
+Collect hosts having identical output and make the identical output appear to 
+only once. The collected hostlist representing the nodes is shown in the header before the output.
 .TP
 .B -d, --unified-diff
-Print only the most abundant output in full, and print any diverging output 
-as a unified diff relative the most abundant output. This mode of operation 
+Print only the most frequent output in full. Then print any diverging output 
+as a unified diff relative the most frequent output. This mode of operation 
 implies the 
-.I -c
+.B -c
 option
 .TP
 .B -g, --with-garbage
-Print also any output not conforming to the "host:output"-format. This
-output will be separated from the host output.
+Also print any output not conforming to the "host:output" format
+in a special 
+.I NON-FORMATTED OUTPUT
+section before the correctly formatted data. The default mode of operation
+is to silently ignore non-conforming lines.
 .TP
 .B -h, --help
 Display a brief help message.
@@ -49,7 +53,7 @@ Display a brief help message.
 .SH EXAMPLES
 .TP
 Collect information about the running kernel version in a \
-compute cluster having  node names n1, n2, ... using pdsh and pshbak:
+compute cluster having  node names n1, n2, ..., n400 using pdsh and pshbak:
 .B pdsh 
 -w n[1-400] uname -r | 
 .B pshbak 
@@ -57,13 +61,12 @@ compute cluster having  node names n1, n2, ... using pdsh and pshbak:
 
 
 .SH AUTHOR
-Written by Mattias Slabanja <slabanja@chalmers.se>
+Written by Mattias Slabanja <slabanja@chalmers.se>.
 
 The program is published at http://www.nsc.liu.se/~kent/python-hostlist/
 
 .SH SEE ALSO
-.I hostlist
-(1)
+.IR hostlist "(1), " pdsh "(1), " dshbak "(1)"
 
 
 The hostlist expression syntax is used by several programs developed at 
