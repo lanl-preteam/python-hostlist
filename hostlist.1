@@ -115,6 +115,22 @@ if
 Written by Kent Engström <kent@nsc.liu.se>.
 
 The program is published at http://www.nsc.liu.se/~kent/python-hostlist/
+.SH NOTES
+The square brackets used in the hostlist expression syntax are also used in
+shell glob patterns. This may cause unwanted surprises if you have files
+in your current directory named after hosts present in the hostlist. Always
+quote the hostlist expression to avoid this problem:
+
+  % hostlist n[1-10]
+  n[1-10]
+  % touch n1
+  % hostlist n[1-10]
+  n1
+  % echo n[1-10]
+  n1
+  % hostlist "n[1-10]"
+  n[1-10]
+
 .SH SEE ALSO
 The hostlist expression syntax is used by several programs developed at 
 .B LLNL
