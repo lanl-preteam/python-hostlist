@@ -21,110 +21,114 @@ if args != []:
     optp.print_help()
     sys.exit(1)
 
-data = sys.stdin.readlines()
+try:
+    data = sys.stdin.readlines()
 
-if opts.verbose:
-    print "Info: read in %i lines of data" % len(data)
+    if opts.verbose:
+        print "Info: read in %i lines of data" % len(data)
 
-if not opts.key:
-    sline = data[0].strip().split()
-    if len(sline) < 2:
-        print "Error: input data has only one column"
-        sys.exit(1)
-    # The first column that can be converted to an int will be our key
-    for i in [ x + 1 for x in range(len(sline[1:])) ]:
-        tmp = None
-        try:
-            tmp = int(sline[i])
-        except ValueError:
-            pass
-        if tmp:
-            if opts.verbose:
-                print "Info: auto-detect found data at column %i" % i
-            opts.key = i
-            break
-    
     if not opts.key:
-        print "Error: no key given and/or autodetect failure"
+        sline = data[0].strip().split()
+        if len(sline) < 2:
+            print "Error: input data has only one column"
+            sys.exit(1)
+        # The first column that can be converted to an int will be our key
+        for i in [ x + 1 for x in range(len(sline[1:])) ]:
+            tmp = None
+            try:
+                tmp = int(sline[i])
+            except ValueError:
+                pass
+            if tmp:
+                if opts.verbose:
+                    print "Info: auto-detect found data at column %i" % i
+                opts.key = i
+                break
+
+        if not opts.key:
+            print "Error: no key given and/or autodetect failure"
+            sys.exit(1)
+
+    valuelist = []
+    for line in data:
+        sline = line.strip().split()
+        valuelist.append(int(sline[opts.key]))
+
+    valuelist.sort()
+
+    minvalue = valuelist[0]
+    maxvalue = valuelist[-1]
+
+    if opts.verbose:
+        print "Info: smallest value found was %i" % minvalue
+        print "Info: largest value found was %i" % maxvalue
+
+    nval = maxvalue - minvalue + 1
+
+    if opts.nbuckets < 1 or opts.nbuckets > nval:
+        print "Error: number of buckets(%i) not suitable for number of values in data(%i)" % (
+            opts.nbuckets, nval)
         sys.exit(1)
 
-valuelist = []
-for line in data:
-    sline = line.strip().split()
-    valuelist.append(int(sline[opts.key]))
+    if opts.verbose:
+        print "Info: will use %i buckets" % opts.nbuckets
 
-valuelist.sort()
+    buckets = range(opts.nbuckets)
+    nvpb = nval / float(opts.nbuckets)
+    next = minvalue
 
-minvalue = valuelist[0]
-maxvalue = valuelist[-1]
+    #print "nval: %i" % nval
+    #print "nvpb: %f" % nvpb
 
-if opts.verbose:
-    print "Info: smallest value found was %i" % minvalue
-    print "Info: largest value found was %i" % maxvalue
+    for b in buckets:
+        buckets[b] = {}
+        buckets[b]['start'] = next
+        buckets[b]['end'] = int(round( ((b+1) * nvpb + (minvalue - 1)) ))
+        next = buckets[b]['end'] + 1
+        buckets[b]['nodes'] = []
 
-nval = maxvalue - minvalue + 1
+    valuedict = {}
+    for line in data:
+        val = int(line.strip().split()[opts.key])
+        node = string.strip(line.strip().split()[0], ':')
+        if not val in valuedict:
+            valuedict[val] = []
+        valuedict[val].append(node)
 
-if opts.nbuckets < 1 or opts.nbuckets > nval:
-    print "Error: number of buckets(%i) not suitable for number of values in data(%i)" % (
-        opts.nbuckets, nval)
-    sys.exit(1)
+    for b in range(len(buckets)):
+    #    print buckets[b]['start']
+    #    print buckets[b]['end']
+        for i in range(buckets[b]['start'], buckets[b]['end'] + 1):
+            if i in valuedict:
+                buckets[b]['nodes'].extend(valuedict[i])
 
-if opts.verbose:
-    print "Info: will use %i buckets" % opts.nbuckets
+    maxnperbucket = 1
+    for bucket in buckets:
+        nperbucket = len(bucket['nodes'])
+        maxnperbucket = max(maxnperbucket, nperbucket)
 
-buckets = range(opts.nbuckets)
-nvpb = nval / float(opts.nbuckets)
-next = minvalue
+    ncharvalue = max(len(str(maxvalue)), 3)
+    ncharnodecnt = max(len(str(maxnperbucket)), 3)
 
-#print "nval: %i" % nval
-#print "nvpb: %f" % nvpb
+    #print "ncharvalue: %i" % ncharvalue
+    #print "ncharnodecnt: %i" % ncharnodecnt
 
-for b in buckets:
-    buckets[b] = {}
-    buckets[b]['start'] = next
-    buckets[b]['end'] = int(round( ((b+1) * nvpb + (minvalue - 1)) ))
-    next = buckets[b]['end'] + 1
-    buckets[b]['nodes'] = []
+    if opts.verbose:
+        print
+        print "%sLOW-%sHI: %sCNT  HOSTLIST" % (" " * (ncharvalue - 3),
+                                               " " * (ncharvalue - 2),
+                                               " " * (ncharnodecnt - 3))
+        print "-" * 80
 
-valuedict = {}
-for line in data:
-    val = int(line.strip().split()[opts.key])
-    node = string.strip(line.strip().split()[0], ':')
-    if not val in valuedict:
-        valuedict[val] = []
-    valuedict[val].append(node)
+    # Main output print
+    for bucket in buckets:
+        pad1 = (ncharvalue - len(str(bucket['start']))) * " "
+        pad2 = (ncharvalue - len(str(bucket['end']))) * " "
+        pad3 = (ncharnodecnt - len(str(len(bucket['nodes'])))) * " "
+        print "%s%i-%s%i: %s%i  %s" % (pad1, bucket['start'],
+                                       pad2, bucket['end'],
+                                       pad3, len(bucket['nodes']),
+                                       collect_hostlist(bucket['nodes']))
 
-for b in range(len(buckets)):
-#    print buckets[b]['start']
-#    print buckets[b]['end']
-    for i in range(buckets[b]['start'], buckets[b]['end'] + 1):
-        if i in valuedict:
-            buckets[b]['nodes'].extend(valuedict[i])
-
-maxnperbucket = 1
-for bucket in buckets:
-    nperbucket = len(bucket['nodes'])
-    maxnperbucket = max(maxnperbucket, nperbucket)
-
-ncharvalue = max(len(str(maxvalue)), 3)
-ncharnodecnt = max(len(str(maxnperbucket)), 3)
-
-#print "ncharvalue: %i" % ncharvalue
-#print "ncharnodecnt: %i" % ncharnodecnt
-
-if opts.verbose:
-    print
-    print "%sLOW-%sHI: %sCNT  HOSTLIST" % (" " * (ncharvalue - 3),
-                                           " " * (ncharvalue - 2),
-                                           " " * (ncharnodecnt - 3))
-    print "-" * 80
-
-# Main output print
-for bucket in buckets:
-    pad1 = (ncharvalue - len(str(bucket['start']))) * " "
-    pad2 = (ncharvalue - len(str(bucket['end']))) * " "
-    pad3 = (ncharnodecnt - len(str(len(bucket['nodes'])))) * " "
-    print "%s%i-%s%i: %s%i  %s" % (pad1, bucket['start'],
-                                   pad2, bucket['end'],
-                                   pad3, len(bucket['nodes']),
-                                   collect_hostlist(bucket['nodes']))
+except KeyboardInterrupt:
+    sys.exit()
