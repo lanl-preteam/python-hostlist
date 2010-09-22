@@ -6,7 +6,7 @@ VERSIONED_FILES = hostlist.py hostlist hostlist.1 \
 NON_VERSIONED_FILES = test COPYING MANIFEST.in CHANGES Makefile
 
 VERSION = 1.9
-RELEASE = 0.1rc
+RELEASE = 1
 
 all:
 	@echo "Do:"
