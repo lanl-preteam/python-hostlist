@@ -86,13 +86,13 @@ def pprint(host, output):
 op = optparse.OptionParser(usage="usage: %prog [OPTION]...",
                            add_help_option = False)
 
-op.add_option("-c", action="store_true",
+op.add_option("-c", "--collect", action="store_true",
               help="Collect identical output.")
 
 op.add_option("-d", "--unified-diff", action="store_true",
               help="Print the most frequent output in its full form, "
               "and all other outputs as unified diffs "
-              "relative the most frequent output. This option implies -c.")
+              "relative the most frequent output. This option implies --collect.")
 
 op.add_option("-g", "--with-garbage", action="store_true",
               help="Also collect and print input not conforming to the "
@@ -150,7 +150,7 @@ if opts.unified_diff:
 else:
     # "Normal" mode, just print the output
 
-    if opts.c:
+    if opts.collect:
         hldict = collect(hldict)
 
     for hr, ls in hldict.iteritems():
