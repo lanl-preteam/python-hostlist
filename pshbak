@@ -35,7 +35,7 @@ def scan():
 
     Input lines are expected to be on the format
     "<hostname>:<rest of line>". Lines not matching that format
-    are ignored by default (same behavior as original dshbak).
+    are added to the dictionary using None as key.
 
     The linesplit-re is designed to match the original dshbak behavior. 
     """
@@ -43,22 +43,25 @@ def scan():
     linesplit = re.compile(r'^ *([A-Za-z0-9.-]+) *: ?(.*)$')
     fd = sys.stdin
     hldict = {}
-    waste = []
 
     for line in fd:
-        m = linesplit.match(line)
-        if m:
-            h, l = m.groups()
-            if hldict.has_key(h):
-                # The groups in the linesplit-re does not include the trailing '\n'
-                hldict[h] += "\n" + l
-            else:
-                hldict[h] = l
+        host = None
+        hostline = None
+        match = linesplit.match(line)
+        if match:
+            host, hostline = match.groups()
         else:
-            # Put lines not matching the linesplit-re in the waste bin
-            waste.append(line.rstrip('\n'))
-    
-    return(hldict, '\n'.join(waste))
+            # The linesplit regex did NOT match.
+            # This line will be added to hldict[None]
+            hostline = line.rstrip('\n')
+
+        if hldict.has_key(host):
+            # The groups in the linesplit-re does not include the trailing '\n'
+            hldict[host] += "\n" + hostline
+        else:
+            hldict[host] = hostline
+
+    return(hldict)
 
 def collect(hldict):
     """Collect hosts having identical output."""
@@ -110,12 +113,14 @@ if opts.version:
     print "Version %s (library version %s)" % (__version__, library_version)
     sys.exit()
 
-hldict, wbin = scan()
+hldict = scan()
 
-if opts.with_garbage and wbin:
+if opts.with_garbage and hldict.has_key(None):
     # The user wants to see garbage-output, and it is non-empty.
     # Print it before the host output regardless of diff/normal mode.
-    pprint('NON-FORMATTED OUTPUT', wbin)
+    pprint('NON-FORMATTED OUTPUT', hldict[None])
+# Remove garbage lines from hldict
+hldict.pop(None,None)
 
 if opts.unified_diff:
     # "Unified diff mode", print the most abundant output, O, in full, and all
