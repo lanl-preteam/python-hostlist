@@ -55,7 +55,7 @@ def scan():
             # This line will be added to hldict[None]
             hostline = line.rstrip('\n')
 
-        if hldict.has_key(host):
+        if host in hldict:
             # The groups in the linesplit-re does not include the trailing '\n'
             hldict[host] += "\n" + hostline
         else:
@@ -68,7 +68,7 @@ def collect(hldict):
 
     coll = {}
     for h, t in hldict.iteritems():
-        if coll.has_key(t):
+        if t in coll:
             coll[t].append(h)
         else:
             coll[t] = [h]
@@ -116,7 +116,7 @@ if opts.version:
 try:
     hldict = scan()
 
-    if opts.with_garbage and hldict.has_key(None):
+    if opts.with_garbage and None in hldict:
         # The user wants to see garbage-output, and it is non-empty.
         # Print it before the host output regardless of diff/normal mode.
         pprint('NON-FORMATTED OUTPUT', hldict[None])
