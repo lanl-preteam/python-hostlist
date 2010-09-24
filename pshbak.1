@@ -29,7 +29,7 @@ printed only once.
 
 .SH OPTIONS
 .TP
-.B -c
+.B -c, --collect
 Collect hosts having identical output and make the identical output appear to 
 only once. The collected hostlist representing the nodes is shown in the header before the output.
 .TP
@@ -37,7 +37,7 @@ only once. The collected hostlist representing the nodes is shown in the header 
 Print only the most frequent output in full. Then print any diverging output 
 as a unified diff relative the most frequent output. This mode of operation 
 implies the 
-.B -c
+.B --collect
 option
 .TP
 .B -g, --with-garbage

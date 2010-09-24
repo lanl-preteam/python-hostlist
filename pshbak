@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # rewrite of dshbak using python-hostlist
@@ -29,85 +29,73 @@ import re
 from hostlist import collect_hostlist, expand_hostlist, __version__ as library_version
 from difflib import unified_diff
 
-
-def die(s, exit_code = 1):
-    sys.stderr.write(s + "\n")
-    sys.exit(1)
-
-
-
-def scan( ):
+def scan():
     """Scan stdin, store lines by host, and return it all in a
     dictionary indexed by host.
 
     Input lines are expected to be on the format
     "<hostname>:<rest of line>". Lines not matching that format
-    are ignored by default (same behavior as original dshbak).
+    are added to the dictionary using None as key.
 
     The linesplit-re is designed to match the original dshbak behavior. 
     """
 
     linesplit = re.compile(r'^ *([A-Za-z0-9.-]+) *: ?(.*)$')
     fd = sys.stdin
-    hldic = { }
-    waste = [ ]
+    hldict = {}
 
     for line in fd:
-        m = linesplit.match(line)
-        if m:
-            h, l = m.groups()
-            if hldic.has_key(h):
-                # The groups in the linesplit-re does not include the trailing '\n'
-                hldic[h] += "\n" + l
-            else:
-                hldic[h] = l
-
+        host = None
+        hostline = None
+        match = linesplit.match(line)
+        if match:
+            host, hostline = match.groups()
         else:
-            # Put lines not matching the linesplit-re in the waste bin
-            waste.append(line.rstrip('\n'))
-    
-    return(hldic, '\n'.join(waste))
+            # The linesplit regex did NOT match.
+            # This line will be added to hldict[None]
+            hostline = line.rstrip('\n')
 
+        if hldict.has_key(host):
+            # The groups in the linesplit-re does not include the trailing '\n'
+            hldict[host] += "\n" + hostline
+        else:
+            hldict[host] = hostline
 
-def collect( hldic ):
-    """Collect hosts having identical output
+    return(hldict)
 
-    """
+def collect(hldict):
+    """Collect hosts having identical output."""
 
-    coll = { }
-    for h, t in hldic.iteritems( ):
+    coll = {}
+    for h, t in hldict.iteritems():
         if coll.has_key(t):
             coll[t].append(h)
         else:
             coll[t] = [h]
 
     # Re-reverse the k-v-order and collapse hosts into a hostrange before returning
-    return dict( [(collect_hostlist(hs), ls) for  ls, hs in coll.iteritems()] )
-
-
+    return dict([(collect_hostlist(hs), ls) for  ls, hs in coll.iteritems()])
 
 def pprint(host, output):
-    "Prepend the output with a hostname framed with horizontal lines"
+    """Prepend the output with a hostname framed with horizontal lines."""
     hline = '-' * 16
     print hline
     print host
     print hline
     print output
-    
-
 
 # MAIN
 
 op = optparse.OptionParser(usage="usage: %prog [OPTION]...",
                            add_help_option = False)
 
-op.add_option("-c", action="store_true",
+op.add_option("-c", "--collect", action="store_true",
               help="Collect identical output.")
 
 op.add_option("-d", "--unified-diff", action="store_true",
               help="Print the most frequent output in its full form, "
               "and all other outputs as unified diffs "
-              "relative the most frequent output. This option implies -c.")
+              "relative the most frequent output. This option implies --collect.")
 
 op.add_option("-g", "--with-garbage", action="store_true",
               help="Also collect and print input not conforming to the "
@@ -122,60 +110,57 @@ op.add_option("--version",
 (opts, args) = op.parse_args()
 
 if opts.version:
-    print "Version %s (library version %s)" % (__version__,
-                                               library_version)
+    print "Version %s (library version %s)" % (__version__, library_version)
     sys.exit()
 
+try:
+    hldict = scan()
 
+    if opts.with_garbage and hldict.has_key(None):
+        # The user wants to see garbage-output, and it is non-empty.
+        # Print it before the host output regardless of diff/normal mode.
+        pprint('NON-FORMATTED OUTPUT', hldict[None])
+    # Remove garbage lines from hldict
+    hldict.pop(None,None)
 
-hldict, wbin = scan( )
+    if opts.unified_diff:
+        # "Unified diff mode", print the most abundant output, O, in full, and all
+        # other outputs as a unified diff relative O.
 
-if opts.with_garbage and wbin:
-    #
-    # The user wants to see garbage-output, and it is non-empty.
-    # Print it before the host output regardless of diff/normal mode.
-    #
-
-    pprint('NON-FORMATTED OUTPUT', wbin)
-
-
-
-if opts.unified_diff:
-    #
-    # "Unified diff mode", print the most abundant output, O, in full, and all
-    # other outputs as a unified diff relative O.
-    #
-
-    hldict = collect(hldict)
-    hllist = [ (hr, ls, len(expand_hostlist(hr)))
-               for hr, ls in hldict.iteritems() ]
-    hllist.sort( key = lambda x:x[2] )     # Sort w r t number of hosts per output
-
-    if len(hllist) == 0:
-        sys.exit()
-
-    ref_hr, ref_ls, ignore = hllist.pop()  # The most abundant output.
-    ref_ls_split = ref_ls.split('\n')      # Split into lines for use with difflib.
-
-    pprint( ref_hr, ref_ls )
-
-    for hr, ls, ignore in hllist:
-        pprint(hr,
-               '\n'.join( unified_diff(ref_ls_split,
-                                       ls.split('\n'),
-                                       fromfile=ref_hr,
-                                       tofile=hr,
-                                       lineterm='')) )
-
-
-else:
-    #
-    # "Normal" mode, just print the output
-    #
-
-    if opts.c:
         hldict = collect(hldict)
+        hllist = [(hr, ls, len(expand_hostlist(hr)))
+                  for hr, ls in hldict.iteritems()]
 
-    for hr, ls in hldict.iteritems():
-        pprint(hr, ls)
+        # Sort w r t number of hosts per output
+        hllist.sort(key = lambda x:x[2])
 
+        if len(hllist) == 0:
+            sys.exit()
+
+        # The most abundant output.
+        ref_hr, ref_ls, ignore = hllist.pop()
+
+        # Split into lines for use with difflib.
+        ref_ls_split = ref_ls.split('\n')
+
+        pprint(ref_hr, ref_ls)
+
+        for hr, ls, ignore in hllist:
+            pprint(hr,
+                   '\n'.join(unified_diff(ref_ls_split,
+                                          ls.split('\n'),
+                                          fromfile=ref_hr,
+                                          tofile=hr,
+                                          lineterm='')))
+
+    else:
+        # "Normal" mode, just print the output
+
+        if opts.collect:
+            hldict = collect(hldict)
+
+        for hr, ls in hldict.iteritems():
+            pprint(hr, ls)
+
+except KeyboardInterrupt:
+    sys.exit()
