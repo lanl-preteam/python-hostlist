@@ -75,11 +75,15 @@ def collect(text_dict):
 
     return [(host_set, text) for text, host_set in reverse_dict.iteritems()]
 
-def output(host_set, text):
+def output(host_set_or_str, text):
     """Prepend the output with a hostname framed with horizontal lines."""
     hline = '-' * 16
+    if isinstance(host_set_or_str, str):
+        header = host_set_or_str # for the benefit of the garbage header
+    else:
+        header = collect_hostlist(host_set_or_str)
     print hline
-    print collect_hostlist(host_set)
+    print header
     print hline
     print text
 
