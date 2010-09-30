@@ -75,13 +75,15 @@ def collect(text_dict):
 
     return [(host_set, text) for text, host_set in reverse_dict.iteritems()]
 
-def output(host_set_or_str, text):
+def output(host_set_or_str, text, count_hosts = False):
     """Prepend the output with a hostname framed with horizontal lines."""
     hline = '-' * 16
     if isinstance(host_set_or_str, str):
         header = host_set_or_str # for the benefit of the garbage header
     else:
         header = collect_hostlist(host_set_or_str)
+        if count_hosts:
+            header = "%d: %s" % (len(host_set_or_str),  header)
     print hline
     print header
     print hline
@@ -94,6 +96,9 @@ op = optparse.OptionParser(usage="usage: %prog [OPTION]...",
 
 op.add_option("-c", "--collect", action="store_true",
               help="Collect identical output.")
+
+op.add_option("-n", "--count", action="store_true",
+              help="Show the number of hosts in the header.")
 
 op.add_option("-d", "--unified-diff", action="store_true",
               help="Print the most frequent output in its full form, "
@@ -145,7 +150,7 @@ try:
         # Split into lines for use with difflib.
         ref_lines = ref_text.split('\n')
 
-        output(ref_host_set, ref_text)
+        output(ref_host_set, ref_text, opts.count)
 
         for host_set, text in hosts_text_list:
             output(host_set,
@@ -153,7 +158,8 @@ try:
                                           text.split('\n'),
                                           fromfile=ref_hostlist,
                                           tofile=collect_hostlist(host_set),
-                                          lineterm='')))
+                                          lineterm='')),
+                   opts.count)
 
     else:
         # "Normal" mode, just print the output
@@ -164,7 +170,7 @@ try:
             hosts_text_list = [(set((n,)), l) for n,l in text_dict.iteritems()]
 
         for host_set, text in hosts_text_list:
-            output(host_set, text)
+            output(host_set, text, opts.count)
 
 except KeyboardInterrupt:
     sys.exit()
