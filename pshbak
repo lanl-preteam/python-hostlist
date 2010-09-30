@@ -169,6 +169,9 @@ try:
         else:
             hosts_text_list = [(set((n,)), l) for n,l in text_dict.iteritems()]
 
+        # Sort in descending order of the number of hosts
+        hosts_text_list.sort(key = lambda x: -len(x[0]))
+
         for host_set, text in hosts_text_list:
             output(host_set, text, opts.count)
 
