@@ -40,36 +40,36 @@ def scan():
     The linesplit-re is designed to match the original dshbak behavior. 
     """
 
-    linesplit = re.compile(r'^ *([A-Za-z0-9.-]+) *: ?(.*)$')
+    linesplitter = re.compile(r'^ *([A-Za-z0-9.-]+) *: ?(.*)$')
     fd = sys.stdin
-    hldict = {}
+    text_dict = {}
 
     for line in fd:
         host = None
         hostline = None
-        match = linesplit.match(line)
+        match = linesplitter.match(line)
         if match:
             host, hostline = match.groups()
         else:
-            # The linesplit regex did NOT match.
-            # This line will be added to hldict[None]
+            # The linesplitter regexp did NOT match.
+            # This line will be added to text_dict[None]
             hostline = line.rstrip('\n')
 
-        if host in hldict:
-            # The groups in the linesplit-re does not include the trailing '\n'
-            hldict[host] += "\n" + hostline
+        if host in text_dict:
+            # The groups in the linesplitter regexp does not include the trailing '\n'
+            text_dict[host] += "\n" + hostline
         else:
-            hldict[host] = hostline
+            text_dict[host] = hostline
 
-    return(hldict)
+    return text_dict
 
-def collect(hldict):
+def collect(text_dict):
     """Collect hosts having identical output.
 
     Return a list of (host set, text) tuples."""
 
     reverse_dict = {}
-    for host, text in hldict.iteritems():
+    for host, text in text_dict.iteritems():
         if text in reverse_dict:
             reverse_dict[text].add(host)
         else:
@@ -77,13 +77,13 @@ def collect(hldict):
 
     return [(host_set, text) for text, host_set in reverse_dict.iteritems()]
 
-def pprint(host_set, output):
+def output(host_set, text):
     """Prepend the output with a hostname framed with horizontal lines."""
     hline = '-' * 16
     print hline
     print collect_hostlist(host_set)
     print hline
-    print output
+    print text
 
 # MAIN
 
@@ -115,54 +115,54 @@ if opts.version:
     sys.exit()
 
 try:
-    hldict = scan()
+    text_dict = scan()
 
-    if opts.with_garbage and None in hldict:
+    if opts.with_garbage and None in text_dict:
         # The user wants to see garbage-output, and it is non-empty.
         # Print it before the host output regardless of diff/normal mode.
-        pprint('NON-FORMATTED OUTPUT', hldict[None])
-    # Remove garbage lines from hldict
-    hldict.pop(None,None)
+        output('NON-FORMATTED OUTPUT', text_dict[None])
+    # Remove garbage lines from text_dict
+    text_dict.pop(None,None)
 
     if opts.unified_diff:
         # "Unified diff mode", print the most abundant output, O, in full, and all
         # other outputs as a unified diff relative O.
 
-        hllist = collect(hldict)
+        hosts_text_list = collect(text_dict)
 
         # Sort w r t number of hosts per output
-        hllist.sort(key = lambda x: len(x[0]))
+        hosts_text_list.sort(key = lambda x: len(x[0]))
 
-        if len(hllist) == 0:
+        if len(hosts_text_list) == 0:
             sys.exit()
 
         # The most abundant output.
-        ref_hr, ref_ls = hllist.pop()
-        ref_hr_c = collect_hostlist(ref_hr)
+        ref_host_set, ref_text = hosts_text_list.pop()
+        ref_hostlist = collect_hostlist(ref_host_set)
 
         # Split into lines for use with difflib.
-        ref_ls_split = ref_ls.split('\n')
+        ref_lines = ref_text.split('\n')
 
-        pprint(ref_hr, ref_ls)
+        output(ref_host_set, ref_text)
 
-        for hr, ls in hllist:
-            pprint(hr,
-                   '\n'.join(unified_diff(ref_ls_split,
-                                          ls.split('\n'),
-                                          fromfile=ref_hr_c,
-                                          tofile=collect_hostlist(hr),
+        for host_set, text in hosts_text_list:
+            output(host_set,
+                   '\n'.join(unified_diff(ref_lines,
+                                          text.split('\n'),
+                                          fromfile=ref_hostlist,
+                                          tofile=collect_hostlist(host_set),
                                           lineterm='')))
 
     else:
         # "Normal" mode, just print the output
 
         if opts.collect:
-            hllist = collect(hldict)
+            hosts_text_list = collect(text_dict)
         else:
-            hllist = [(set((n,)), l) for n,l in hldict.iteritems()]
+            hosts_text_list = [(set((n,)), l) for n,l in text_dict.iteritems()]
 
-        for hr, ls in hllist:
-            pprint(hr, ls)
+        for host_set, text in hosts_text_list:
+            output(host_set, text)
 
 except KeyboardInterrupt:
     sys.exit()
