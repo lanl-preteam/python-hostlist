@@ -132,14 +132,14 @@ try:
 
         hosts_text_list = collect(text_dict)
 
-        # Sort w r t number of hosts per output
-        hosts_text_list.sort(key = lambda x: len(x[0]))
+        # Sort in descending order of the number of hosts
+        hosts_text_list.sort(key = lambda x: -len(x[0]))
 
         if len(hosts_text_list) == 0:
             sys.exit()
 
-        # The most abundant output.
-        ref_host_set, ref_text = hosts_text_list.pop()
+        # The most abundant output
+        ref_host_set, ref_text = hosts_text_list.pop(0)
         ref_hostlist = collect_hostlist(ref_host_set)
 
         # Split into lines for use with difflib.
