@@ -41,18 +41,16 @@ def scan():
     """
 
     linesplitter = re.compile(r'^ *([A-Za-z0-9.-]+) *: ?(.*)$')
-    fd = sys.stdin
     text_dict = {}
 
-    for line in fd:
-        host = None
-        hostline = None
+    for line in sys.stdin:
         match = linesplitter.match(line)
         if match:
             host, hostline = match.groups()
         else:
             # The linesplitter regexp did NOT match.
             # This line will be added to text_dict[None]
+            host = None
             hostline = line.rstrip('\n')
 
         if host in text_dict:
