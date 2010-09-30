@@ -64,23 +64,24 @@ def scan():
     return(hldict)
 
 def collect(hldict):
-    """Collect hosts having identical output."""
+    """Collect hosts having identical output.
 
-    coll = {}
-    for h, t in hldict.iteritems():
-        if t in coll:
-            coll[t].append(h)
+    Return a list of (host set, text) tuples."""
+
+    reverse_dict = {}
+    for host, text in hldict.iteritems():
+        if text in reverse_dict:
+            reverse_dict[text].add(host)
         else:
-            coll[t] = [h]
+            reverse_dict[text] = set((host,))
 
-    # Re-reverse the k-v-order and collapse hosts into a hostrange before returning
-    return dict([(collect_hostlist(hs), ls) for  ls, hs in coll.iteritems()])
+    return [(host_set, text) for text, host_set in reverse_dict.iteritems()]
 
-def pprint(host, output):
+def pprint(host_set, output):
     """Prepend the output with a hostname framed with horizontal lines."""
     hline = '-' * 16
     print hline
-    print host
+    print collect_hostlist(host_set)
     print hline
     print output
 
@@ -127,39 +128,40 @@ try:
         # "Unified diff mode", print the most abundant output, O, in full, and all
         # other outputs as a unified diff relative O.
 
-        hldict = collect(hldict)
-        hllist = [(hr, ls, len(expand_hostlist(hr)))
-                  for hr, ls in hldict.iteritems()]
+        hllist = collect(hldict)
 
         # Sort w r t number of hosts per output
-        hllist.sort(key = lambda x:x[2])
+        hllist.sort(key = lambda x: len(x[0]))
 
         if len(hllist) == 0:
             sys.exit()
 
         # The most abundant output.
-        ref_hr, ref_ls, ignore = hllist.pop()
+        ref_hr, ref_ls = hllist.pop()
+        ref_hr_c = collect_hostlist(ref_hr)
 
         # Split into lines for use with difflib.
         ref_ls_split = ref_ls.split('\n')
 
         pprint(ref_hr, ref_ls)
 
-        for hr, ls, ignore in hllist:
+        for hr, ls in hllist:
             pprint(hr,
                    '\n'.join(unified_diff(ref_ls_split,
                                           ls.split('\n'),
-                                          fromfile=ref_hr,
-                                          tofile=hr,
+                                          fromfile=ref_hr_c,
+                                          tofile=collect_hostlist(hr),
                                           lineterm='')))
 
     else:
         # "Normal" mode, just print the output
 
         if opts.collect:
-            hldict = collect(hldict)
+            hllist = collect(hldict)
+        else:
+            hllist = [(set((n,)), l) for n,l in hldict.iteritems()]
 
-        for hr, ls in hldict.iteritems():
+        for hr, ls in hllist:
             pprint(hr, ls)
 
 except KeyboardInterrupt:
