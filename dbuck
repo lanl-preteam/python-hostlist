@@ -2,7 +2,7 @@
 
 import sys
 import optparse
-#import string
+import stats
 from hostlist import collect_hostlist
 
 # clean and refine indata: list of STRING -> list of [ "hostname", float vaule ]
@@ -237,6 +237,9 @@ optp.add_option("-m", "--merge-buckets",
 optp.add_option("-n", "--nbuckets",
                 action="store", type="int", default=5,
                 help="number of buckets to use (default: %default)")
+optp.add_option("-s", "--statistics",
+                action="store_true", default=False,
+                help="include a statistic summary")
 optp.add_option("-S", "--chop-long-lines",
                 action="store_true", default=False,
                 help="chop too long lines / enforce one output line per bucket")
@@ -244,6 +247,8 @@ optp.add_option("-t", "--field-separators",
                 action="store", type="string", default="",
                 help="_additional_ field separators (default: \"\")")
 optp.add_option("-v", "--verbose",
+                action="store_true", default=False)
+optp.add_option("--debug",
                 action="store_true", default=False)
 (opts, args) = optp.parse_args(sys.argv[1:])
 
@@ -271,7 +276,18 @@ valuelist = map(lambda(x): x[1], data)
 valuelist.sort()
 
 buckets = create_buckets(valuelist)
-#print buckets
+
+if opts.statistics:
+    print "Statistical summary"
+    print "-" * 50
+    print " Number of values: %i" % len(valuelist)
+    print " Min value: %f" % valuelist[0]
+    print " Max value: %f" % valuelist[-1]
+    print " Mean: %f" % stats.mean(valuelist)
+    print " Median: %f" % stats.median(valuelist)
+    print " Standard deviation: %f" % stats.stdev(valuelist)
+    print " Sum: %f" % stats.sum(valuelist)
+    print
 
 for nbucket in xrange(len(buckets)):
     buckets[nbucket]['nodelist'] = []
