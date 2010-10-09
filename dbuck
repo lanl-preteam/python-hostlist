@@ -131,13 +131,23 @@ def create_buckets(valuelist):
         # for each unique value check distance to next value, create bucket if large enough
         for nval in xrange(len(deduped_vlist)-1):
             if deduped_vlist[nval+1]-deduped_vlist[nval] > bsize:
-                blist.append( { 'ub': deduped_vlist[nval], 'alsolb': 1} )
+                if opts.debug:
+                    print "Debug: adding bucket with lb: %f ub: %f" % (deduped_vlist[nval],
+                                                                       deduped_vlist[nval+1])
+                ublist = [ blist[x]['ub'] for x in xrange(len(blist)) ]
+                # only add a bucket entry for the lb if it doesn't already exist
+                if deduped_vlist[nval] in ublist:
+                    i = ublist.index(deduped_vlist[nval])
+                    blist[i]['alsolb'] = 1
+                else:
+                    blist.append( { 'ub': deduped_vlist[nval], 'alsolb': 1} )
                 blist.append( { 'ub': deduped_vlist[nval+1] } )
                 comprange += deduped_vlist[nval+1]-deduped_vlist[nval]
                 nforce += 1
-        # sort blist and add end bucket at maxvalue
+        # sort blist and add end bucket at maxvalue if needed
         blist.sort(lambda a, b: cmp(a['ub'], b['ub']))
-        blist.append( { 'ub': maxvalue } )
+        if maxvalue not in [ blist[x]['ub'] for x in xrange(len(blist)) ]:
+            blist.append( { 'ub': maxvalue } )
         # figure out how much work we have left
         remainingrange = rsize - comprange
         remainingbuckets = opts.nbuckets - nforce
@@ -147,24 +157,27 @@ def create_buckets(valuelist):
             print "Debug: remaining range: %.2f -> bsize: %.2f" % (remainingrange,
                                                                   remainingbsize)
         # traverse buckets and see if what's below can/should be split
-        for bnum in xrange(len(blist)):
-            if bnum == 0:
-                lowref = minvalue
-            else:
-                lowref = blist[bnum-1]['ub']
-                if 'alsolb' in blist[bnum-1]:
-                    continue
-#            print "candidate range: %.2f to %.2f" % (lowref, blist[bnum]['ub'])
-#            print "1.3 x remainingbsize for this range: %.2f" % ((blist[bnum]['ub']-lowref) / (1.3 * remainingbsize))
-            # 1.3 purely made up but seems quite good ;-)
-            nnew = int((blist[bnum]['ub'] - lowref) / (1.3 * remainingbsize))
-            if nnew > 0:
-                newbsize = (blist[bnum]['ub'] - lowref) / (nnew + 1)
-#                print "newbsize: %.2f" % newbsize
-                for x in xrange(nnew):
-                    if opts.debug:
-                        print "Debug: adding additional bucket at: %.2f" % (lowref + (newbsize * (x + 1)))
-                    blist.append( {'ub': lowref + (newbsize * (x + 1)) })
+        if (remainingrange > 0) and (remainingbuckets > 0):
+            for bnum in xrange(len(blist)):
+                if bnum == 0:
+                    lowref = minvalue
+                else:
+                    lowref = blist[bnum-1]['ub']
+                    if 'alsolb' in blist[bnum-1]:
+                        continue
+#                print "candidate range: %.2f to %.2f" % (lowref, blist[bnum]['ub'])
+#                print "1.3 x remainingbsize for this range: %.2f" % ((blist[bnum]['ub']-lowref) / (1.3 * remainingbsize))
+                # 1.3 purely made up but seems quite good ;-)
+                nnew = int((blist[bnum]['ub'] - lowref) / (1.3 * remainingbsize))
+                if nnew > 0:
+                    newbsize = (blist[bnum]['ub'] - lowref) / (nnew + 1)
+#                    print "newbsize: %.2f" % newbsize
+                    for x in xrange(nnew):
+                        if opts.debug:
+                            print "Debug: adding additional bucket at: %.2f" % (lowref + (newbsize * (x + 1)))
+                        blist.append( {'ub': lowref + (newbsize * (x + 1)) })
+        elif opts.debug:
+            print "Debug: no remaining range left to populate"
         # finish up with a final sort
         blist.sort(lambda a, b: cmp(a['ub'], b['ub']))
     elif opts.bucket:
@@ -228,8 +241,12 @@ def create_buckets(valuelist):
             done = done + bsize
             blist.append(tmp)
 
-    # this makes sure the last bucket ends on exactly the last bucket
+    # this makes sure the last bucket ends exactly at the end of the range
     blist[-1]['ub'] = valuelist[-1]
+
+    if blist[0]['ub'] == valuelist[0]:
+        blist.remove(blist[0])
+
     return blist
 
 
