@@ -2,9 +2,13 @@
 
 import sys
 import optparse
-import stats
 import subprocess
 from hostlist import collect_hostlist
+try:
+    statsexist = True
+    import stats
+except ImportError:
+    statsexist = False
 
 def gettermwidth():
     return int(subprocess.Popen(["/bin/stty", "size"],
@@ -248,7 +252,7 @@ optp.add_option("-n", "--nbuckets",
                 help="number of buckets to use (default: %default)")
 optp.add_option("-s", "--statistics",
                 action="store_true", default=False,
-                help="include a statistic summary")
+                help="include a statistical summary")
 optp.add_option("-S", "--chop-long-lines",
                 action="store_true", default=False,
                 help="chop too long lines / enforce one output line per bucket")
@@ -272,20 +276,28 @@ if opts.nbuckets < 1:
     print "Error: number of buckets must be a positive integer"
     exit(1)
 
+if opts.statistics and not statsexist:
+    print "Error: --statistics requires the stats module (python-stats pkg)"
+    exit(1)
+
+termwidth = 80
+#termwidth = gettermwidth()
+
 rawdata = sys.stdin.readlines()
 
 if len(rawdata) <= 3:
     print "Error: not enough indata (only %i line(s))" % len(rawdata)
     exit(1)
 
-(data, badlines) = refine_data(rawdata)
+# do list of str -> list of [ hostname, value ] and discard bad lines
+(data, nbadlines) = refine_data(rawdata)
+# sort it
 data.sort(lambda a, b: cmp(a[1], b[1]))
+# put the values in a simple list
+valuelist = map(lambda(x): x[1], data)
 
 if opts.debug:
     print "Debug: cleaned up data: %s" % str(data)
-
-valuelist = map(lambda(x): x[1], data)
-valuelist.sort()
 
 # Create the bucket list
 buckets = create_buckets(valuelist)
@@ -294,16 +306,12 @@ if opts.debug:
     for nbucket in xrange(len(buckets)):
         print "Debug:  bucket[%i] %f" % (nbucket, buckets[nbucket]['ub'])
 
-#sys.stdin.close()
-#termwidth = gettermwidth()
-termwidth = 80
-
 # Dump out some statistics
 if opts.statistics:
     print "Statistical summary"
     print "-" * (termwidth - 1)
     print " %-25s: %i" % ("Number of values", len(valuelist))
-    print " %-25s: %i" % ("Number of rejected lines", badlines)
+    print " %-25s: %i" % ("Number of rejected lines", nbadlines)
     print " %-25s: %f" % ("Min value", valuelist[0])
     print " %-25s: %f" % ("Max value", valuelist[-1])
     print " %-25s: %f" % ("Mean", stats.mean(valuelist))
