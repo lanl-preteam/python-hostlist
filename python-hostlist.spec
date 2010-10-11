@@ -51,4 +51,5 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man1/hostlist.1.gz
 /usr/share/man/man1/hostgrep.1.gz
 /usr/share/man/man1/pshbak.1.gz
+/usr/share/man/man1/dbuck.1.gz
 %changelog
