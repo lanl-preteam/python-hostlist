@@ -36,11 +36,6 @@ def gettermwidth():
     return cols
 
 ## Statistical functions
-def sum(list):
-    sum = 0
-    for i in list:
-        sum += i
-    return sum
 
 def mean(list):
     return sum(list)/float(len(list))
@@ -54,7 +49,8 @@ def median(list):
         return tmp[int(len(tmp)/2)]
 
 def stdev(list):
-    return math.sqrt(mean( [ (mean(list) - x)**2 for x in list ] ))
+    m = mean(list)
+    return math.sqrt(mean( [ (m - x)**2 for x in list ] ))
 
 # clean and refine indata: list of STRING -> list of [ "hostname", float vaule ]
 def refine_data(rawlist):
