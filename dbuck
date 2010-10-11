@@ -2,7 +2,7 @@
 
 import sys
 import optparse
-import subprocess
+import commands
 from hostlist import collect_hostlist
 try:
     statsexist = True
@@ -11,8 +11,11 @@ except ImportError:
     statsexist = False
 
 def gettermwidth():
-    return int(subprocess.Popen(["/bin/stty", "size"],
-                                stdout=subprocess.PIPE).communicate()[0].strip().split()[1])
+    try:
+        cols = int(commands.getoutput("/bin/stty -F /dev/tty size").split()[1])
+    except:
+        cols = 80
+    return cols
 
 # clean and refine indata: list of STRING -> list of [ "hostname", float vaule ]
 def refine_data(rawlist):
@@ -297,8 +300,9 @@ if opts.statistics and not statsexist:
     print "Error: --statistics requires the stats module (python-stats pkg)"
     exit(1)
 
-termwidth = 80
-#termwidth = gettermwidth()
+termwidth = gettermwidth()
+if opts.debug:
+    print "Debug: termwidth: %i" % termwidth
 
 rawdata = sys.stdin.readlines()
 
