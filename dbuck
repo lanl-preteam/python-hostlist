@@ -327,7 +327,12 @@ termwidth = gettermwidth()
 if opts.debug:
     print "Debug: termwidth: %i" % termwidth
 
-rawdata = sys.stdin.readlines()
+try:
+    rawdata = sys.stdin.readlines()
+except KeyboardInterrupt:
+    if opts.verbose:
+    print "Info: Caught keyboard interrupt, exiting..."
+    exit(1)
 
 if len(rawdata) <= 3:
     print "Error: not enough indata (only %i line(s))" % len(rawdata)
