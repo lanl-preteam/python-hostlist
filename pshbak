@@ -27,7 +27,7 @@ import optparse
 import re
 
 from hostlist import collect_hostlist, expand_hostlist, __version__ as library_version
-from difflib import unified_diff
+from difflib import unified_diff, SequenceMatcher 
 
 def scan():
     """Scan stdin, store lines by host, and return it all in a
@@ -89,6 +89,93 @@ def output(host_set_or_str, text, count_hosts = False):
     print hline
     print text
 
+
+def counter(init=1):
+    i = init
+    while True:
+        yield i
+        i += 1
+
+class Collector:
+    def __init__(self, ref_text, name=None):
+        ref_lines = ref_text.split('\n')
+        self.N = len(ref_lines)
+        self._matchers = [SequenceMatcher(None, L, L) for L in ref_lines]
+        self._lmb_pairs = [[] for i in range(self.N)]
+
+        self._add_lines(ref_lines)
+
+    def try_add_text(self, text, name=None):
+        lines = text.split('\n')
+        if len(lines) != self.N:
+            return False
+
+        self._update_seq1(lines)
+
+        ratio = (1.0/self.N) * sum([mat.quick_ratio() for mat in self._matchers])
+        if ratio < 0.50:
+            return False
+
+        self._clear_result()
+        self._add_lines(lines)
+        return True
+
+    def _update_seq1(self, lines):
+        for L, mat in zip(lines, self._matchers):
+            mat.set_seq1(L)
+
+    def _clear_result(self):
+        pass
+
+    def _add_lines(self, lines):
+        # matchers seq1 must already be updated
+        for mbs, L, mat in zip(self._lmb_pairs, lines, self._matchers):
+            mbs.append((L, mat.get_matching_blocks())) #This is what's taking time
+            
+    def process(self):
+        for i in range(self.N):
+            self._process_line(i)
+
+    def _process_line(self, i):
+        lmbs = self._lmb_pairs[i]
+        ref_line, _ = lmbs[0]
+        ref_line_N = len(ref_line)
+        mask = [1] * ref_line_N
+        # mask will correspond to the "intersection" of all 
+        # matching character (relative the reference line)
+        # and each number will correspond to a "matching partition id"
+        for _, mb in lmbs[1:]:
+            print mb
+            jprev, nprev = 0, 0
+            for _, j, n in mb:
+                mask[(jprev+nprev):j] = [False] * (j-jprev-nprev)
+                for i in range(j,ref_line_N):
+                    if mask[i]:
+                        mask[i] += 1
+                jprev, nprev = j, n
+
+        print mask
+        # # convert mask to "matching blocks"-like format, [(j,n)]
+        # ref_mb = []
+        # match = False
+        # for j in range(ref_line_N):
+        #     if mask[j]:
+        #         if not match:
+        #             match = True
+        #             jprev = j
+        #     elif match:
+        #         match = False
+        #         ref_mb.append((jprev, j-jprev))
+        # if match:
+        #     ref_mb.append((jprev, ref_line_N-jprev))
+
+        for L, mb in lmbs[0:]:
+            pass
+
+
+    
+        
+
 # MAIN
 
 op = optparse.OptionParser(usage="usage: %prog [OPTION]...",
@@ -96,6 +183,8 @@ op = optparse.OptionParser(usage="usage: %prog [OPTION]...",
 
 op.add_option("-c", "--collect", action="store_true",
               help="Collect identical output.")
+op.add_option("-C", "--crazy-collect", action="store_true",
+              help="Collect similar output.")
 
 op.add_option("-n", "--count", action="store_true",
               help="Show the number of hosts in the header.")
@@ -160,6 +249,17 @@ try:
                                           tofile=collect_hostlist(host_set),
                                           lineterm='')),
                    opts.count)
+
+    elif opts.crazy_collect:
+
+        ref_host, ref_text = text_dict.popitem()
+        c = Collector(ref_text)
+        for h, t in text_dict.iteritems():
+            if c.try_add_text(t):
+                print "Added ", h
+            else:
+                print "Ignored ", h
+        c.process()
 
     else:
         # "Normal" mode, just print the output
