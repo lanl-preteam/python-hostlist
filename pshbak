@@ -28,6 +28,7 @@ import re
 
 from hostlist import collect_hostlist, expand_hostlist, __version__ as library_version
 from difflib import unified_diff, SequenceMatcher 
+from itertools import count
 
 def scan():
     """Scan stdin, store lines by host, and return it all in a
@@ -90,22 +91,35 @@ def output(host_set_or_str, text, count_hosts = False):
     print text
 
 
-def counter(init=1):
-    i = init
-    while True:
-        yield i
-        i += 1
+def in_red(s):
+    return '\033[91m' + s + '\033[0m'
 
 class Collector:
-    def __init__(self, ref_text, name=None):
+    """Collect closely matching texts, find similarities and differences
+
+    Depends on SequenceMatcher. 
+    Texts being similar enough when doing a line-per-line comparison
+    to a reference text can be added using the try_add_text method.
+    When texts of interest has been added, calling the process method
+    will sort out which parts are identical (per line intersection 
+    of all matches between reference and succeeding texts)
+    and will store the individual differences.
+    The heavy part of the processing is done by
+    SequenceMatcher.get_matching_blocks called from try_add_text.
+    """
+    def __init__(self, ref_text, tag=None):
         ref_lines = ref_text.split('\n')
         self.N = len(ref_lines)
         self._matchers = [SequenceMatcher(None, L, L) for L in ref_lines]
         self._lmb_pairs = [[] for i in range(self.N)]
+        self._tags = []
+        self._tag_counter = count(1)
 
+        self._reset_processing_result()
         self._add_lines(ref_lines)
+        self._push_tag_name(tag)
 
-    def try_add_text(self, text, name=None):
+    def try_add_text(self, text, tag=None):
         lines = text.split('\n')
         if len(lines) != self.N:
             return False
@@ -116,63 +130,107 @@ class Collector:
         if ratio < 0.50:
             return False
 
-        self._clear_result()
+        self._reset_processing_result()
         self._add_lines(lines)
+        self._push_tag_name(tag)
         return True
+
+    def process(self):
+        for i in range(self.N):
+            self._process_line(i)
+
+        self.text = '\n'.join(self._text_lines)
+        print self.text
 
     def _update_seq1(self, lines):
         for L, mat in zip(lines, self._matchers):
             mat.set_seq1(L)
 
-    def _clear_result(self):
-        pass
+    def _reset_processing_result(self):
+        self.text = None
+        self._text_lines = [''] * self.N
+        self._diff_counter = count(1)
 
     def _add_lines(self, lines):
         # matchers seq1 must already be updated
-        for mbs, L, mat in zip(self._lmb_pairs, lines, self._matchers):
-            mbs.append((L, mat.get_matching_blocks())) #This is what's taking time
+        for lmbs, L, mat in zip(self._lmb_pairs, lines, self._matchers):
+            lmbs.append((L, mat.get_matching_blocks())) #This is what's taking time
+        
+    def _push_tag_name(self, tag=None):
+        if tag is None:
+            self._tags.append('text%i' % self._tag_counter.next())
+        else:
+            self._tags.append(tag)
             
-    def process(self):
-        for i in range(self.N):
-            self._process_line(i)
-
-    def _process_line(self, i):
-        lmbs = self._lmb_pairs[i]
-        ref_line, _ = lmbs[0]
-        ref_line_N = len(ref_line)
-        mask = [1] * ref_line_N
-        # mask will correspond to the "intersection" of all 
-        # matching character (relative the reference line)
-        # and each number will correspond to a "matching partition id"
+    def _process_line(self, line_i):
+        lmbs = self._lmb_pairs[line_i]
+        ref_L, _ = lmbs[0]
+        ref_L_N = len(ref_L)
+        part_mask = [1] * (ref_L_N+1) #Extra 1 to indicate trailing diff
         for _, mb in lmbs[1:]:
-            print mb
-            jprev, nprev = 0, 0
-            for _, j, n in mb:
-                mask[(jprev+nprev):j] = [False] * (j-jprev-nprev)
-                for i in range(j,ref_line_N):
-                    if mask[i]:
-                        mask[i] += 1
-                jprev, nprev = j, n
+            ipn = jpn = 0
+            for i, j, n in mb:
+                if ((i != 0 or j != 0) and
+                    (jpn != j or ipn != i)):
+                    #There is a diff, update the partion mask
+                    for jind in range(jpn, j):
+                        part_mask[jind] = False
+                    for jind in range(j, ref_L_N+1):
+                        if part_mask[jind]:
+                            part_mask[jind] += 1
+                jpn = j + n
+                ipn = i + n
+        part_mask, end_part = part_mask[:-1], part_mask[-1]
 
-        print mask
-        # # convert mask to "matching blocks"-like format, [(j,n)]
-        # ref_mb = []
-        # match = False
-        # for j in range(ref_line_N):
-        #     if mask[j]:
-        #         if not match:
-        #             match = True
-        #             jprev = j
-        #     elif match:
-        #         match = False
-        #         ref_mb.append((jprev, j-jprev))
-        # if match:
-        #     ref_mb.append((jprev, ref_line_N-jprev))
+        # collect combined non- and minimal- matching blocks between
+        # the reference line and all other lines.
+        nm_mb = []
+        opi = 0
+        op = 1
+        
+        for i in range(0, ref_L_N):
+            if part_mask[i] is False:
+                if op is False:
+                    # Continue along non-matching block
+                    continue
+                else:
+                    # from matching to non-matching block
+                    nm_mb.append(('m', opi, i-opi))
+            else:
+                if part_mask[i] == op:
+                    # Continue along matching block
+                    continue
+                elif op is False:
+                    # from non-matching to matching block
+                    nm_mb.append(('n', opi, i-opi))
+                else:
+                    # between matching (via 0-length non-matching)
+                    nm_mb.append(('m', opi, i-opi))
+                    nm_mb.append(('n', i, 0))
+            op = part_mask[i]
+            opi = i                    
 
-        for L, mb in lmbs[0:]:
-            pass
+        if op is False:
+            nm_mb.append(('n', opi, ref_L_N-opi))
+        else:
+            nm_mb.append(('m', opi, ref_L_N-opi))
+            if op != end_part:
+                nm_mb.append(('n', ref_L_N, 0))
 
+        if len(nm_mb) == 1:
+            #No non-matching-blocks, hence all lines are identical
+            self._text_lines[line_i] = ref_L
+            return
 
+        line = ''
+        for t, i, n in nm_mb:
+            if t == 'm':
+                line += ref_L[i:i+n]
+            elif t == 'n':
+                line += in_red('[DIFF%i]' % self._diff_counter.next())
+                for L, mb in lmbs:
+                    pass
+        self._text_lines[line_i] = line
     
         
 
