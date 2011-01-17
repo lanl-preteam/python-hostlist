@@ -132,7 +132,8 @@ class Collector:
         if ratio < self._match_limit:
             return False
 
-        self._reset_processing_result()
+        if not self.text is None:
+            self._reset_processing_result()
         self._add_lines(lines)
         self._push_label_name(label)
         return True
@@ -147,10 +148,7 @@ class Collector:
         self.text = '\n'.join(self._text_lines)
         self.labels = self._labels
         self.N_diffs = self._diff_counter.next()-1
-
-    def _update_seq1(self, lines):
-        for L, mat in zip(lines, self._matchers):
-            mat.set_seq1(L)
+        self.diffs = self._diffs
 
     def _reset_processing_result(self):
         self.text = None
@@ -160,6 +158,11 @@ class Collector:
         self._text_lines = [''] * self._N
         self._diff_counter = count(1)
         self._diffs = {}
+
+    def _update_seq1(self, lines):
+        # Simply set seq1 in all SequenceMatchers
+        for L, mat in zip(lines, self._matchers):
+            mat.set_seq1(L)
 
     def _add_lines(self, lines):
         # Add a new set of lines, matchers seq1 must already be updated
@@ -371,9 +374,9 @@ try:
             if not opts.show_only_diff:
                 output(set(c._labels), c.text, opts.count)
             if opts.show_diff or opts.show_only_diff:
-                for h in c._labels:
+                for h in c.labels:
                     print (("%s: " % h) +
-                           ' '.join(['"'+x+'"' for x in c._diffs[h]]))
+                           ' '.join(['"'+x+'"' for x in c.diffs[h]]))
 
     else:
         # "Normal" mode, just print the output
