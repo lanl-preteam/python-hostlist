@@ -95,52 +95,58 @@ def in_red(s):
     return '\033[91m' + s + '\033[0m'
 
 class Collector:
-    """Collect closely matching texts, find similarities and differences
+    """Collect relatively matching texts, find similarities and differences
 
     Depends on SequenceMatcher. 
     Texts being similar enough when doing a line-per-line comparison
-    to a reference text can be added using the try_add_text method.
+    to a reference text can be added with the try_add_text method.
     When texts of interest has been added, calling the process method
     will sort out which parts are identical (per line intersection 
-    of all matches between reference and succeeding texts)
+    of all matches between reference and rest of the texts)
     and will store the individual differences.
     The heavy part of the processing is done by
     SequenceMatcher.get_matching_blocks called from try_add_text.
     """
-    def __init__(self, ref_text, tag=None):
+    def __init__(self, ref_text, label=None, match_limit=0.5):
         ref_lines = ref_text.split('\n')
-        self.N = len(ref_lines)
+        self._N = len(ref_lines)
         self._matchers = [SequenceMatcher(None, L, L) for L in ref_lines]
-        self._lmb_pairs = [[] for i in range(self.N)]
-        self._tags = []
-        self._tag_counter = count(1)
+        assert match_limit <= 1.0 and match_limit >= 0
+        self._match_limit = match_limit
+        self._lmb_pairs = [[] for i in range(self._N)]
+        self._labels = []
+        self._label_counter = count(1)
 
         self._reset_processing_result()
         self._add_lines(ref_lines)
-        self._push_tag_name(tag)
+        self._push_label_name(label)
 
-    def try_add_text(self, text, tag=None):
+    def try_add_text(self, text, label=None):
         lines = text.split('\n')
-        if len(lines) != self.N:
+        if len(lines) != self._N:
             return False
 
         self._update_seq1(lines)
 
-        ratio = (1.0/self.N) * sum([mat.quick_ratio() for mat in self._matchers])
-        if ratio < 0.50:
+        ratio = (1.0/self._N) * sum([mat.quick_ratio() for mat in self._matchers])
+        if ratio < self._match_limit:
             return False
 
         self._reset_processing_result()
         self._add_lines(lines)
-        self._push_tag_name(tag)
+        self._push_label_name(label)
         return True
 
     def process(self):
-        for i in range(self.N):
+        for label in self._labels:
+            self._diffs[label] = []
+
+        for i in range(self._N):
             self._process_line(i)
 
         self.text = '\n'.join(self._text_lines)
-        print self.text
+        self.labels = self._labels
+        self.N_diffs = self._diff_counter.next()-1
 
     def _update_seq1(self, lines):
         for L, mat in zip(lines, self._matchers):
@@ -148,26 +154,39 @@ class Collector:
 
     def _reset_processing_result(self):
         self.text = None
-        self._text_lines = [''] * self.N
+        self.labels = None
+        self.N_diffs = None
+        self.diffs = None
+        self._text_lines = [''] * self._N
         self._diff_counter = count(1)
+        self._diffs = {}
 
     def _add_lines(self, lines):
-        # matchers seq1 must already be updated
+        # Add a new set of lines, matchers seq1 must already be updated
         for lmbs, L, mat in zip(self._lmb_pairs, lines, self._matchers):
             lmbs.append((L, mat.get_matching_blocks())) #This is what's taking time
         
-    def _push_tag_name(self, tag=None):
-        if tag is None:
-            self._tags.append('text%i' % self._tag_counter.next())
+    def _push_label_name(self, label=None):
+        if label is None:
+            self._labels.append('text%i' % self._label_counter.next())
         else:
-            self._tags.append(tag)
+            self._labels.append(label)
             
     def _process_line(self, line_i):
+        # Process a given line number (ith line for all texts).
+        # * Using a mask, construct a "minimum match"
+        # * Sort out "minumum match"/"supremum non-match" into
+        #   matching-blocks-like format
+        # * Construct an output text line with "diff-labels"
+        #   as placeholders for non-matches
+        # * Sort out the differences (if any) and add them to
+        #   a list for the respective label/host 
+
         lmbs = self._lmb_pairs[line_i]
         ref_L, _ = lmbs[0]
         ref_L_N = len(ref_L)
-        part_mask = [1] * (ref_L_N+1) #Extra 1 to indicate trailing diff
-        for _, mb in lmbs[1:]:
+        part_mask = [1] * (ref_L_N+1) #Extra element to indicate trailing diff
+        for _, mb in lmbs[1:]: #Next matching-block
             ipn = jpn = 0
             for i, j, n in mb:
                 if ((i != 0 or j != 0) and
@@ -183,56 +202,75 @@ class Collector:
         part_mask, end_part = part_mask[:-1], part_mask[-1]
 
         # collect combined non- and minimal- matching blocks between
-        # the reference line and all other lines.
+        # the reference line and all other lines into one.
+        # 'n' = non-matching, 'm' = matching.
+        # non-matching blocks can be 0-length.
         nm_mb = []
-        opi = 0
+        opj = 0
         op = 1
         
-        for i in range(0, ref_L_N):
-            if part_mask[i] is False:
+        for j in range(0, ref_L_N):
+            if part_mask[j] is False:
                 if op is False:
                     # Continue along non-matching block
                     continue
-                else:
+                elif j-opj > 0:
                     # from matching to non-matching block
-                    nm_mb.append(('m', opi, i-opi))
+                    nm_mb.append(('m', opj, j-opj))
             else:
-                if part_mask[i] == op:
+                if part_mask[j] == op:
                     # Continue along matching block
                     continue
                 elif op is False:
                     # from non-matching to matching block
-                    nm_mb.append(('n', opi, i-opi))
+                    nm_mb.append(('n', opj, j-opj))
                 else:
-                    # between matching (via 0-length non-matching)
-                    nm_mb.append(('m', opi, i-opi))
-                    nm_mb.append(('n', i, 0))
-            op = part_mask[i]
-            opi = i                    
+                    # go between matching (via 0-length non-matching)
+                    if j-opj > 0:
+                        nm_mb.append(('m', opj, j-opj))
+                    nm_mb.append(('n', j, 0))
+            op = part_mask[j]
+            opj = j
 
         if op is False:
-            nm_mb.append(('n', opi, ref_L_N-opi))
+            nm_mb.append(('n', opj, ref_L_N-opj))
         else:
-            nm_mb.append(('m', opi, ref_L_N-opi))
+            nm_mb.append(('m', opj, ref_L_N-opj))
             if op != end_part:
                 nm_mb.append(('n', ref_L_N, 0))
 
-        if len(nm_mb) == 1:
-            #No non-matching-blocks, hence all lines are identical
+
+        if len(nm_mb) == 1 and nm_mb[0][0] == 'm':
+            #Only a single matching-block, hence no diffs among the set of lines
             self._text_lines[line_i] = ref_L
             return
 
-        line = ''
-        for t, i, n in nm_mb:
+        line = []
+        for t, j, n in nm_mb:
             if t == 'm':
-                line += ref_L[i:i+n]
+                line.append(ref_L[j:j+n])
             elif t == 'n':
-                line += in_red('[DIFF%i]' % self._diff_counter.next())
-                for L, mb in lmbs:
-                    pass
-        self._text_lines[line_i] = line
-    
-        
+                line.append(in_red('[DIFF%i]' % self._diff_counter.next()))
+        self._text_lines[line_i] = ''.join(line)
+
+        index = [-1]*(ref_L_N+2)
+        padded_mb = [('m', 0, 0)] + nm_mb + [('m', ref_L_N, 0)]
+        for label, lmb in zip(self._labels, lmbs):
+            L, mb = lmb
+            index[ref_L_N] = len(L)
+            for i, j, n in mb:
+                index[j:j+n] = range(i, i+n)
+
+            diffs = self._diffs[label]
+            for mb_i in range(1, len(padded_mb)-1):
+                if padded_mb[mb_i][0] == 'n':
+                    _, jA, nA = padded_mb[mb_i-1]
+                    _, jB, _  = padded_mb[mb_i+1]
+                    iA = index[jA+nA-1]+1        
+                    iB = index[jB]
+                    diffs.append(L[iA:iB])
+                    
+            
 
 # MAIN
 
@@ -241,8 +279,16 @@ op = optparse.OptionParser(usage="usage: %prog [OPTION]...",
 
 op.add_option("-c", "--collect", action="store_true",
               help="Collect identical output.")
-op.add_option("-C", "--crazy-collect", action="store_true",
-              help="Collect similar output.")
+op.add_option("-C", "--collect-similar", action="store_true",
+              help="Collect similar output. Collects output that is "
+              "in relatively close proximity to each other. ")
+op.add_option("", "--show-diff", action="store_true",
+              help="When using --collect-similar, also print the "
+              "individual differences for each host.")
+op.add_option("", "--show-only-diff", action="store_true",
+              help="When using --collect-similar, the same as "
+              "--show-diff, but don't display "
+              "the identical part of the texts.")
 
 op.add_option("-n", "--count", action="store_true",
               help="Show the number of hosts in the header.")
@@ -308,16 +354,26 @@ try:
                                           lineterm='')),
                    opts.count)
 
-    elif opts.crazy_collect:
+    elif opts.collect_similar:
 
-        ref_host, ref_text = text_dict.popitem()
-        c = Collector(ref_text)
-        for h, t in text_dict.iteritems():
-            if c.try_add_text(t):
-                print "Added ", h
-            else:
-                print "Ignored ", h
-        c.process()
+        collects = []
+        for host, text in text_dict.iteritems():
+            picked = False
+            for c in collects:
+                picked = c.try_add_text(text, host)
+                if picked:
+                    break
+            if not picked:
+                collects.append(Collector(text, host))
+            
+        for c in collects:
+            c.process()
+            if not opts.show_only_diff:
+                output(set(c._labels), c.text, opts.count)
+            if opts.show_diff or opts.show_only_diff:
+                for h in c._labels:
+                    print (("%s: " % h) +
+                           ' '.join(['"'+x+'"' for x in c._diffs[h]]))
 
     else:
         # "Normal" mode, just print the output
