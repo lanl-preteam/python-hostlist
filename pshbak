@@ -76,6 +76,16 @@ def collect(text_dict):
 
     return [(host_set, text) for text, host_set in reverse_dict.iteritems()]
 
+
+def in_red(s):
+    return '\033[91m' + s + '\033[0m'
+def in_blue(s):
+    return '\033[94m' + s + '\033[0m'
+def in_gray(s):
+    return '\033[90m' + s + '\033[0m'
+if not sys.stdout.isatty():
+    in_red = in_blue = lambda x:x
+
 def output(host_set_or_str, text, count_hosts = False):
     """Prepend the output with a hostname framed with horizontal lines."""
     hline = '-' * 16
@@ -90,9 +100,6 @@ def output(host_set_or_str, text, count_hosts = False):
     print hline
     print text
 
-
-def in_red(s):
-    return '\033[91m' + s + '\033[0m'
 
 class Collector:
     """Collect relatively matching texts, find similarities and differences
@@ -138,24 +145,35 @@ class Collector:
         self._push_label_name(label)
         return True
 
-    def process(self):
+    def process(self, spliced_diff=False, collected_splice=True):
+        """Process the gathered texts
+
+        spliced_diff - splice in the lines that are differing
+        collected_splice - try to collect the differing lines
+        """
+
+        if not self.text is None:
+            self._reset_processing_result()
+            
         for label in self._labels:
-            self._diffs[label] = []
+            self._diffs[label] = {}
+        self._diffs[None] = {} # Dummy diffs, "[DIFF1]" etc
 
         for i in range(self._N):
-            self._process_line(i)
+            self._process_line(i, spliced_diff, collected_splice)
 
         self.text = '\n'.join(self._text_lines)
         self.labels = self._labels
         self.N_diffs = self._diff_counter.next()-1
         self.diffs = self._diffs
 
+
     def _reset_processing_result(self):
         self.text = None
         self.labels = None
         self.N_diffs = None
         self.diffs = None
-        self._text_lines = [''] * self._N
+        self._text_lines = []
         self._diff_counter = count(1)
         self._diffs = {}
 
@@ -175,7 +193,7 @@ class Collector:
         else:
             self._labels.append(label)
             
-    def _process_line(self, line_i):
+    def _process_line(self, line_i, spliced_diff, collected_splice):
         # Process a given line number (ith line for all texts).
         # * Using a mask, construct a "minimum match"
         # * Sort out "minumum match"/"supremum non-match" into
@@ -183,7 +201,9 @@ class Collector:
         # * Construct an output text line with "diff-labels"
         #   as placeholders for non-matches
         # * Sort out the differences (if any) and add them to
-        #   a list for the respective label/host 
+        #   a list for the respective label/host
+        # * In case of spliced_diff, print differing lines
+        #   "in place" in consecutive order
 
         lmbs = self._lmb_pairs[line_i]
         ref_L, _ = lmbs[0]
@@ -244,18 +264,34 @@ class Collector:
 
 
         if len(nm_mb) == 1 and nm_mb[0][0] == 'm':
-            #Only a single matching-block, hence no diffs among the set of lines
-            self._text_lines[line_i] = ref_L
+            # Only a single matching-block, hence no diffs among the set of lines.
+            # Just push the line and be done with it.
+            self._text_lines.append(ref_L)
             return
 
-        line = []
+        line_template = []
+        colorize_diff = in_red
+        if spliced_diff:
+            colorize_ident = in_blue
+        else:
+            colorize_ident = lambda x:x
+
+        # Create a template line, and count diffs
+        diff_is = []
         for t, j, n in nm_mb:
             if t == 'm':
-                line.append(ref_L[j:j+n])
+                line_template.append(colorize_ident(ref_L[j:j+n]))
             elif t == 'n':
-                line.append(in_red('[DIFF%i]' % self._diff_counter.next()))
-        self._text_lines[line_i] = ''.join(line)
+                di = self._diff_counter.next()
+                line_template.append(colorize_diff('%%(%i)s' % di))
+                diff_is.append(di)
+        line_template = ''.join(line_template)
+        #self._text_lines[line_i] = line_template
 
+        self._add_dummy_diffs(diff_is)
+        diff0 = diff_is[0]
+
+        # Retrieve all diffs
         index = [-1]*(ref_L_N+2)
         padded_mb = [('m', 0, 0)] + nm_mb + [('m', ref_L_N, 0)]
         for label, lmb in zip(self._labels, lmbs):
@@ -264,6 +300,7 @@ class Collector:
             for i, j, n in mb:
                 index[j:j+n] = range(i, i+n)
 
+            dc = count(diff0)
             diffs = self._diffs[label]
             for mb_i in range(1, len(padded_mb)-1):
                 if padded_mb[mb_i][0] == 'n':
@@ -271,9 +308,26 @@ class Collector:
                     _, jB, _  = padded_mb[mb_i+1]
                     iA = index[jA+nA-1]+1        
                     iB = index[jB]
-                    diffs.append(L[iA:iB])
-                    
-            
+                    diffs[str(dc.next())] = L[iA:iB]
+
+        if spliced_diff:
+            d = self._diffs
+            text_dict = dict([(l, line_template % d[l]) 
+                              for l in self._labels])
+            hosts_text_list = collect(text_dict)
+            hosts_text_list.sort(key = lambda x: -len(x[0]))
+
+            for host_set, text in hosts_text_list:
+                self._text_lines.append(
+                    in_gray(collect_hostlist(host_set)) + ": " + text)
+        else:
+            self._text_lines.append(line_template % self._diffs[None])
+                                        
+
+    def _add_dummy_diffs(self, diff_is):
+        d = self._diffs[None]
+        d.update([(str(k), '[DIFF%i]'%k) for k in diff_is])
+
 
 # MAIN
 
@@ -292,6 +346,9 @@ op.add_option("", "--show-only-diff", action="store_true",
               help="When using --collect-similar, the same as "
               "--show-diff, but don't display "
               "the identical part of the texts.")
+op.add_option("", "--spliced-diff", action="store_true",
+              help="When using --collect-similar, print differing "
+              "lines spliced into the indentical part.")
 
 op.add_option("-n", "--count", action="store_true",
               help="Show the number of hosts in the header.")
@@ -370,7 +427,7 @@ try:
                 collects.append(Collector(text, host))
             
         for c in collects:
-            c.process()
+            c.process(opts.spliced_diff)
             if not opts.show_only_diff:
                 output(set(c._labels), c.text, opts.count)
             if opts.show_diff or opts.show_only_diff:
