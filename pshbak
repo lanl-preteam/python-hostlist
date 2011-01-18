@@ -157,6 +157,7 @@ class Collector:
 
         for label in self._labels:
             self._diffs[label] = {}
+            self._diffs[label]['h'] = label
 
         if spliced_diff:
             self._colorize_ident = in_blue
@@ -439,9 +440,10 @@ try:
                 output(set(c._labels), c.text, opts.count)
             if opts.show_diff or opts.show_only_diff:
                 if c.N_diffs > 0:
+                    template = '%(h)s' + ': ' + ' '.join(
+                        ['"%%(%i)s"'%i for i in range(1, c.N_diffs+1)])
                     for h in c.labels:
-                        print (("%s: " % h) +
-                               ' '.join(['"'+x+'"' for x in c.diffs[h]]))
+                        print template % c.diffs[h]
                         
     else:
         # "Normal" mode, just print the output
