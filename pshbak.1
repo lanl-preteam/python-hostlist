@@ -33,6 +33,30 @@ printed only once.
 Collect hosts having identical output and make the identical output appear to 
 only once. The collected hostlist representing the nodes is shown in the header before the output.
 .TP
+.B -C, --collect-similar
+Collect hosts having relatively similar output, and print the identical part of
+the output only once. The parts of the output which differs among the hosts
+are replaced with an enumerated tag ([DIFF1], [DIFF2], ...).
+For two outputs to be considered relatively similar, they must contain the
+same number of lines, and in total, the lines must not be too different.
+.TP
+.B --show-diff
+When using 
+.B --collect-similar
+, after the similar part, for each host, print a hostname prefixed line
+containing a quoted list of all the enumerated differences.
+.TP
+.B --show-only-diff
+Same as
+.B --show-diff
+, but the similar part of the output is never printed.
+.TP
+.B --show-spliced-diff
+When using 
+.B --collect-similar
+, output lines containing differences are prefixed by its hostname and
+printed together with the similar part of the output.
+.TP
 .B -n, --count
 Show the number of hosts in the header (before the hostlist).
 .TP
@@ -56,7 +80,7 @@ Display a brief help message.
 .SH EXAMPLES
 .TP
 Collect information about the running kernel version in a \
-compute cluster having  node names n1, n2, ..., n400 using pdsh and pshbak:
+compute cluster having node names n1, n2, ..., n400 using pdsh and pshbak:
 .B pdsh 
 -w n[1-400] uname -r | 
 .B pshbak 
