@@ -374,10 +374,11 @@ try:
             if not opts.show_only_diff:
                 output(set(c._labels), c.text, opts.count)
             if opts.show_diff or opts.show_only_diff:
-                for h in c.labels:
-                    print (("%s: " % h) +
-                           ' '.join(['"'+x+'"' for x in c.diffs[h]]))
-
+                if c.N_diffs > 0:
+                    for h in c.labels:
+                        print (("%s: " % h) +
+                               ' '.join(['"'+x+'"' for x in c.diffs[h]]))
+                        
     else:
         # "Normal" mode, just print the output
 
