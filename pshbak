@@ -145,7 +145,17 @@ class Collector:
         self._push_label_name(label)
         return True
 
-    def process(self, spliced_diff=False, collected_diff=False):
+    def render_line(self, template, label=None, c_i=in_plain, c_d=in_red):
+
+        line = []
+        for matching, ttext in template:
+            if matching:
+                line.append(c_i(ttext))
+            else:
+                line.append(c_d(ttext))
+        return (''.join(line))%self._diffs[label]
+
+    def process(self, spliced_diff=False, collected_diff=True):
         """Process the gathered texts
 
         spliced_diff - splice in the lines that are differing
@@ -159,20 +169,26 @@ class Collector:
             self._diffs[label] = {}
             self._diffs[label]['h'] = label
 
-        if spliced_diff:
-            self._colorize_ident = in_blue
-            self._colorize_diff = in_red
-        else:
-            self._colorize_ident = in_plain
-            self._colorize_diff = in_red
-            
-        for i in range(self._N):
-            self._process_line(i, spliced_diff, collected_diff)
-
+        lines = []
+        # For each set of lines, sort out differences
+        for lmbs in self._lmb_pairs:
+            line_template, N_diffs = self._process_line(lmbs)
+            lines.append(self.render_line(line_template))
+            if N_diffs > 0 and spliced_diff:
+                d = self._diffs
+                text_dict = dict([(l, self.render_line(line_template, 
+                                                       l, c_i=in_blue))
+                                  for l in self._labels])
+                if collected_diff:
+                    hosts_text_list = collect(text_dict)
+                    for host_set, text in hosts_text_list:
+                        lines.append(in_gray(collect_hostlist(host_set)) + 
+                                     ": " + text)
+                                        
         self.labels = self._labels
         self.N_diffs = self._diff_counter.next()-1
         self.diffs = self._diffs
-        self.text = '\n'.join(self._text_lines)
+        self.text = '\n'.join(lines)
 
 
     def _reset_processing_result(self):
@@ -180,7 +196,6 @@ class Collector:
         self.labels = None
         self.N_diffs = None
         self.diffs = None
-        self._text_lines = []
         self._diff_counter = count(1)
         
         # Initialize dict for dummy diff-labels
@@ -205,19 +220,16 @@ class Collector:
         else:
             self._labels.append(label)
             
-    def _process_line(self, line_i, spliced_diff, collected_diff):
-        # Process a given line number (ith line for all texts).
+    def _process_line(self, lmbs):
+        # Get non- and minimal matching blocks for a set of lines.
+        # lmbs is a list of (line, matching_blocks)-pairs, for
+        # all lines to consider.
+        #
         # * Using a mask, construct a "minimum match"
-        # * Sort out "minumum match"/"supremum non-match" into
-        #   matching-blocks-like format
-        # * Construct an output text line with "diff-labels"
-        #   as placeholders for non-matches
-        # * Sort out the differences (if any) and add them to
-        #   a dict for the respective label/host
-        # * In case of spliced_diff, add differing lines
-        #   "in place"
+        # * Sort out "supremum non-match"/"minumum match" into
+        #   matching-blocks-like format and 
+        # * create a line template with escaped %-signs
 
-        lmbs = self._lmb_pairs[line_i]
         ref_L, _ = lmbs[0]
         ref_L_N = len(ref_L)
         part_mask = [1] * (ref_L_N+1) #Extra element to indicate trailing diff
@@ -236,14 +248,27 @@ class Collector:
                 ipn = i + n
         part_mask, end_part = part_mask[:-1], part_mask[-1]
 
-        # collect combined non- and minimal- matching blocks between
-        # the reference line and all other lines into one.
-        # 'n' = non-matching, 'm' = matching.
-        # non-matching blocks can be 0-length.
+        # collect combined non and minimal matching blocks (nm_nb)
+        # between the reference line and all other lines.
+        # False = non-matching, True = matching.
+        # non-matching blocks can be 0-length (n==0).
+        # Also, when we are at it, create an affiliated line_template.
         nm_mb = []
+        diff_idxs = []
+        line_template = []
+
+        def push_m(j, n):
+            nm_mb.append((True, j, n))
+            line_template.append((True, ref_L[j:j+n].replace('%', '%(p)s')))
+
+        def push_n(j, n):
+            nm_mb.append((False, j, n))
+            di = self._diff_counter.next()
+            line_template.append((False, '%%(%i)s' % di))
+            diff_idxs.append(di)
+        
         opj = 0
         op = 1
-        
         for j in range(0, ref_L_N):
             if part_mask[j] is False:
                 if op is False:
@@ -251,90 +276,61 @@ class Collector:
                     continue
                 elif j-opj > 0:
                     # from matching to non-matching block
-                    nm_mb.append(('m', opj, j-opj))
+                    push_m(opj, j-opj)
             else:
                 if part_mask[j] == op:
                     # Continue along matching block
                     continue
                 elif op is False:
                     # from non-matching to matching block
-                    nm_mb.append(('n', opj, j-opj))
+                    push_n(opj, j-opj)
                 else:
                     # go between matching (via 0-length non-matching)
                     if j-opj > 0:
-                        nm_mb.append(('m', opj, j-opj))
-                    nm_mb.append(('n', j, 0))
+                        push_m(opj, j-opj)
+                    push_n(j, 0)
             op = part_mask[j]
             opj = j
 
         if op is False:
-            nm_mb.append(('n', opj, ref_L_N-opj))
+            push_n(opj, ref_L_N-opj)
         else:
-            nm_mb.append(('m', opj, ref_L_N-opj))
+            push_m(opj, ref_L_N-opj)
             if op != end_part:
-                nm_mb.append(('n', ref_L_N, 0))
+                push_n(ref_L_N, 0)
 
 
-        if len(nm_mb) == 1 and nm_mb[0][0] == 'm':
-            # Only a single matching-block, hence no diffs among the set of lines.
-            # Just push the line and be done with it.
-            self._text_lines.append(ref_L)
-            return
+        if len(diff_idxs) > 0:
+            # This line contains differences,
+            # find them and store them.
 
-        # Create a template line, and count diffs
-        diff_is = []
-        line_template = []
-        col_i = self._colorize_ident
-        col_d = self._colorize_diff
-        for t, j, n in nm_mb:
-            if t == 'm':
-                line_template.append(col_i(ref_L[j:j+n].replace('%', '%(p)s')))
-            elif t == 'n':
-                di = self._diff_counter.next()
-                line_template.append(col_d('%%(%i)s' % di))
-                diff_is.append(di)
-        line_template = ''.join(line_template)
-        #self._text_lines[line_i] = line_template
+            # Create dummy diffs
+            d = self._diffs[None]
+            d.update([(str(k), '[DIFF%i]'%k) for k in diff_idxs])
 
-        self._add_dummy_diffs(diff_is)
-        diff0 = diff_is[0]
+            index = [-1]*(ref_L_N+2)
+            padded_mb = [(True, 0, 0)] + nm_mb + [(True, ref_L_N, 0)]
+            diff_i0 = diff_idxs[0]
 
-        # Retrieve all diffs and store them in dicts
-        index = [-1]*(ref_L_N+2)
-        padded_mb = [('m', 0, 0)] + nm_mb + [('m', ref_L_N, 0)]
-        for label, lmb in zip(self._labels, lmbs):
-            L, mb = lmb
-            index[ref_L_N] = len(L)
-            for i, j, n in mb:
-                index[j:j+n] = range(i, i+n)
+            for label, lmb in zip(self._labels, lmbs):
+                L, mb = lmb
+                index[ref_L_N] = len(L)
+                for i, j, n in mb:
+                    index[j:j+n] = range(i, i+n)
 
-            dc = count(diff0)
-            diffs = self._diffs[label]
-            for mb_i in range(1, len(padded_mb)-1):
-                if padded_mb[mb_i][0] == 'n':
-                    _, jA, nA = padded_mb[mb_i-1]
-                    _, jB, _  = padded_mb[mb_i+1]
-                    iA = index[jA+nA-1]+1        
-                    iB = index[jB]
-                    diffs[str(dc.next())] = L[iA:iB]
+                dc = count(diff_i0)
+                diffs = self._diffs[label]
+                for mb_i in range(1, len(padded_mb)-1):
+                    if padded_mb[mb_i][0] is False: # False == non-matching block
+                        _, jA, nA = padded_mb[mb_i-1]
+                        _, jB, _  = padded_mb[mb_i+1]
+                        iA = index[jA+nA-1]+1        
+                        iB = index[jB]
+                        diffs[str(dc.next())] = L[iA:iB]
 
-        if spliced_diff:
-            d = self._diffs
-            text_dict = dict([(l, line_template % d[l]) 
-                              for l in self._labels])
-            hosts_text_list = collect(text_dict)
-            hosts_text_list.sort(key = lambda x: -len(x[0]))
+        return line_template, len(diff_idxs)
 
-            for host_set, text in hosts_text_list:
-                self._text_lines.append(
-                    in_gray(collect_hostlist(host_set)) + ": " + text)
-        else:
-            self._text_lines.append(line_template % self._diffs[None])
-                                        
 
-    def _add_dummy_diffs(self, diff_is):
-        d = self._diffs[None]
-        d.update([(str(k), '[DIFF%i]'%k) for k in diff_is])
 
 
 # MAIN
