@@ -77,14 +77,14 @@ def collect(text_dict):
     return [(host_set, text) for text, host_set in reverse_dict.iteritems()]
 
 
+# Colors enabled by default
 def in_red(s):
     return '\033[91m' + s + '\033[0m'
 def in_blue(s):
     return '\033[94m' + s + '\033[0m'
 def in_gray(s):
     return '\033[90m' + s + '\033[0m'
-if not sys.stdout.isatty():
-    in_red = in_blue = in_gray = lambda x:x
+in_plain = lambda x:x
 
 def output(host_set_or_str, text, count_hosts=False):
     """Prepend the output with a hostname framed with horizontal lines."""
@@ -95,9 +95,9 @@ def output(host_set_or_str, text, count_hosts=False):
         header = collect_hostlist(host_set_or_str)
         if count_hosts:
             header = "%d: %s" % (len(host_set_or_str),  header)
-    print hline
-    print header
-    print hline
+    print in_gray(hline)
+    print in_gray(header)
+    print in_gray(hline)
     print text
 
 
@@ -145,11 +145,11 @@ class Collector:
         self._push_label_name(label)
         return True
 
-    def process(self, spliced_diff=False, collected_splice=True):
+    def process(self, spliced_diff=False, collected_diff=False):
         """Process the gathered texts
 
         spliced_diff - splice in the lines that are differing
-        collected_splice - try to collect the differing lines
+        collected_diff - try to collect the differing lines
         """
 
         if not self.text is None:
@@ -163,11 +163,11 @@ class Collector:
             self._colorize_ident = in_blue
             self._colorize_diff = in_red
         else:
-            self._colorize_ident = lambda x:x
+            self._colorize_ident = in_plain
             self._colorize_diff = in_red
             
         for i in range(self._N):
-            self._process_line(i, spliced_diff, collected_splice)
+            self._process_line(i, spliced_diff, collected_diff)
 
         self.labels = self._labels
         self.N_diffs = self._diff_counter.next()-1
@@ -205,7 +205,7 @@ class Collector:
         else:
             self._labels.append(label)
             
-    def _process_line(self, line_i, spliced_diff, collected_splice):
+    def _process_line(self, line_i, spliced_diff, collected_diff):
         # Process a given line number (ith line for all texts).
         # * Using a mask, construct a "minimum match"
         # * Sort out "minumum match"/"supremum non-match" into
@@ -371,6 +371,9 @@ op.add_option("-g", "--with-garbage", action="store_true",
               ' "host : output"-format. '
               "Garbage output will be presented separated from host output.")
 
+op.add_option("", "--color", metavar='Y/N',
+              help="Force ANSI color usage; either y[es] or n[o]. "
+              "ANSI colors will be used by default for tty output.")
 op.add_option("-h", "--help", action="help", help="Show help")
 op.add_option("--version",
               action="store_true",
@@ -381,6 +384,17 @@ op.add_option("--version",
 if opts.version:
     print "Version %s (library version %s)" % (__version__, library_version)
     sys.exit()
+
+# Check to see if we should override use of colors (default = yes for tty)
+if opts.color:
+    if (opts.color.lower() in ["n", "no", "0"]):
+        in_red = in_blue = in_gray = in_plain
+    elif not (opts.color.lower() in ["y", "yes", "1"]):
+        sys.stderr.write('Error: expected --color y[es] or --color n[o]\n')
+        sys.exit(1)
+elif not sys.stdout.isatty():
+    in_red = in_blue = in_gray = in_plain
+
 
 try:
     text_dict = scan()
