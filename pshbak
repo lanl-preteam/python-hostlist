@@ -147,15 +147,19 @@ class Collector:
 
     def render_line(self, template, label=None, c_i=in_plain, c_d=in_red):
 
+        if type(template) is str:
+            return template % self._diffs[label]
+
         line = []
         for matching, ttext in template:
             if matching:
                 line.append(c_i(ttext))
             else:
                 line.append(c_d(ttext))
-        return (''.join(line))%self._diffs[label]
 
-    def process(self, spliced_diff=False, collected_diff=True):
+        return (''.join(line)) % self._diffs[label]
+
+    def process(self, spliced_diff=False, collected_diff=False):
         """Process the gathered texts
 
         spliced_diff - splice in the lines that are differing
@@ -168,23 +172,28 @@ class Collector:
         for label in self._labels:
             self._diffs[label] = {}
             self._diffs[label]['h'] = label
+            self._diffs[label]['p'] = '%'
 
         lines = []
         # For each set of lines, sort out differences
         for lmbs in self._lmb_pairs:
+
             line_template, N_diffs = self._process_line(lmbs)
+
             lines.append(self.render_line(line_template))
+
             if N_diffs > 0 and spliced_diff:
                 d = self._diffs
-                text_dict = dict([(l, self.render_line(line_template, 
-                                                       l, c_i=in_blue))
+                text_dict = dict([(l, self.render_line(line_template, l, c_i=in_blue))
                                   for l in self._labels])
                 if collected_diff:
                     hosts_text_list = collect(text_dict)
-                    for host_set, text in hosts_text_list:
-                        lines.append(in_gray(collect_hostlist(host_set)) + 
-                                     ": " + text)
-                                        
+                else:
+                    hosts_text_list = text_dict.iteritems()
+                for host_set, text in hosts_text_list:
+                    lines.append(in_gray(collect_hostlist(host_set)) + 
+                                 ": " + text)
+                    
         self.labels = self._labels
         self.N_diffs = self._diff_counter.next()-1
         self.diffs = self._diffs
@@ -445,7 +454,7 @@ try:
                 collects.append(Collector(text, host))
             
         for c in collects:
-            c.process(opts.spliced_diff)
+            c.process(opts.spliced_diff, opts.collect)
             if not opts.show_only_diff:
                 output(set(c._labels), c.text, opts.count)
             if opts.show_diff or opts.show_only_diff:
