@@ -370,24 +370,31 @@ op.add_option("-c", "--collect", action="store_true",
 op.add_option("-C", "--collect-similar", action="store_true",
               help="Collect similar output. Collects output that is "
               "in relatively close proximity to each other. ")
-op.add_option("", "--show-diff", action="store_true",
-              help="When using --collect-similar, also print the "
-              "individual differences for each host.")
-op.add_option("", "--show-only-diff", action="store_true",
-              help="When using --collect-similar, the same as "
-              "--show-diff, but don't display "
-              "the identical part of the texts.")
-op.add_option("", "--spliced-diff", action="store_true",
-              help="When using --collect-similar, print differing "
-              "lines spliced into the indentical part.")
 
-op.add_option("-n", "--count", action="store_true",
-              help="Show the number of hosts in the header.")
+C_group = optparse.OptionGroup(op, 'Collect-similar mode options',
+                               'Options that can be used together with '
+                               'the --collect-similar mode. These options '
+                               'control if/how the "collected-part" and '
+                               'differences should be displayed.')
+C_group.add_option("", "--spliced-diff", action="store_true",
+                   help="Print differing lines, spliced into the indentical part.")
+C_group.add_option("", "--no-collected", action="store_true",
+                   help="Don't print the collected part.")
+C_group.add_option("", "--format-diff", metavar="FORMAT",
+                   help="After the collected part, print the individual "
+                   "differences for each host as specified by FORMAT. "
+                   "FORMAT is a string where $h and $1, $2, ... will be substituted "
+                   "with hostname and difference 1, 2, etc. "
+                   "E.g. --format-diff='$h: $3 $1'")
+op.add_option_group(C_group)
 
 op.add_option("-d", "--unified-diff", action="store_true",
               help="Print the most frequent output in its full form, "
               "and all other outputs as unified diffs "
               "relative the most frequent output. This option implies --collect.")
+
+op.add_option("-n", "--count", action="store_true",
+              help="Show the number of hosts in the header.")
 
 op.add_option("-g", "--with-garbage", action="store_true",
               help="Also collect and print input not conforming to the "
@@ -401,6 +408,7 @@ op.add_option("-h", "--help", action="help", help="Show help")
 op.add_option("--version",
               action="store_true",
               help="Show version")
+
 
 (opts, args) = op.parse_args()
 
@@ -471,16 +479,26 @@ try:
             if not picked:
                 collects.append(Collector(text, host))
             
+        if opts.format_diff:
+            fmt_re = re.compile(r'\$(h|[1-9][0-9]*)|\${(h|[1-9][0-9]*)}')
+
         for c in collects:
             c.process(opts.spliced_diff, opts.collect)
-            if not opts.show_only_diff:
+            if not opts.no_collected:
                 output(set(c._labels), c.text, opts.count)
-            if opts.show_diff or opts.show_only_diff:
-                if c.N_diffs > 0:
-                    template = '%(h)s' + ': ' + ' '.join(
-                        ['"%%(%i)s"'%i for i in range(1, c.N_diffs+1)])
-                    for h in c.labels:
-                        print template % c.diffs[h]
+                
+            if opts.format_diff and c.N_diffs > 0:
+                def fmt_fun(m):
+                    v = m.group(1)
+                    if v.isdigit() and int(v) > c.N_diffs:
+                        return ''
+                    return '%%(%s)s' % v
+                fmt = fmt_re.sub(fmt_fun,
+                                 opts.format_diff.replace('%', '%(p)s'))
+
+                lines = [(h, c.render_line(fmt, h)) for h in c.labels]
+                for _, line in sorted(lines, key=lambda x:x[0]):
+                    print line
                         
     else:
         # "Normal" mode, just print the output
