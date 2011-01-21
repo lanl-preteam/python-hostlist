@@ -149,7 +149,7 @@ class Collector:
         self._push_label_name(label)
         return True
 
-    def render_line(self, template, label=None, col_t=in_plain, col_f=in_red):
+    def render_line(self, template, label=None, col_t=in_plain, col_f=in_plain):
         """Render a line-template into a text line.
 
         %(h)s, $(1)s, %(2)s, .. is substituted to 
@@ -197,11 +197,12 @@ class Collector:
 
             line_template, N_diffs = self._process_line(lmbs)
 
-            lines.append(self.render_line(line_template))
+            lines.append(self.render_line(line_template, col_f=in_red))
 
             if N_diffs > 0 and spliced_diff:
                 d = self._diffs
                 text_dict = dict([(l, self.render_line(line_template, l, 
+                                                       col_f=in_ref,
                                                        col_t=in_blue))
                                   for l in self._labels])
                 if collected_diff:
