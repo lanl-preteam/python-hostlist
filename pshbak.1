@@ -46,6 +46,9 @@ the output only once. The parts of the output which differs among the hosts
 are replaced with an enumerated tag ([DIFF1], [DIFF2], ...).
 For two outputs to be considered relatively similar, they must contain the
 same number of lines, and in total, the lines must not be too different.
+The enumerated differences can be referenced and printed using the 
+.BR --format-diff ","
+option.
 .TP
 .B --spliced-diff
 When using 
