@@ -129,12 +129,16 @@ class Collector:
         self._push_label_name(label)
 
     def try_add_text(self, text, label=None):
+        """Test if text is similar enough, if it is, add it
+        """
+
         lines = text.split('\n')
         if len(lines) != self._N:
             return False
 
         self._update_seq1(lines)
 
+        # The quick_ratio method is somewhat expensive
         ratio = (1.0/self._N) * sum([mat.quick_ratio() for mat in self._matchers])
         if ratio < self._match_limit:
             return False
@@ -145,7 +149,20 @@ class Collector:
         self._push_label_name(label)
         return True
 
-    def render_line(self, template, label=None, c_i=in_plain, c_d=in_red):
+    def render_line(self, template, label=None, col_t=in_plain, col_f=in_red):
+        """Render a line-template into a text line.
+
+        %(h)s, $(1)s, %(2)s, .. is substituted to 
+        hostname (label), diff1, diff2, ...
+        
+        percent-sign needs to be escaped by replacing them with
+        %(p)s.
+
+        If template is not a string, it is expected to be list of
+        (bool, string) tuples, where the strings will be processed
+        with col_t and col_f for True and False, respectively.
+        This is used to control the colors of the rendered line.
+        """
 
         if type(template) is str:
             return template % self._diffs[label]
@@ -153,9 +170,9 @@ class Collector:
         line = []
         for matching, ttext in template:
             if matching:
-                line.append(c_i(ttext))
+                line.append(col_t(ttext))
             else:
-                line.append(c_d(ttext))
+                line.append(col_f(ttext))
 
         return (''.join(line)) % self._diffs[label]
 
@@ -184,15 +201,16 @@ class Collector:
 
             if N_diffs > 0 and spliced_diff:
                 d = self._diffs
-                text_dict = dict([(l, self.render_line(line_template, l, c_i=in_blue))
+                text_dict = dict([(l, self.render_line(line_template, l, 
+                                                       col_t=in_blue))
                                   for l in self._labels])
                 if collected_diff:
-                    hosts_text_list = collect(text_dict)
+                    hosts_text_list = [(collect_hostlist(hs), t) 
+                                       for hs, t in collect(text_dict)]
                 else:
                     hosts_text_list = text_dict.iteritems()
-                for host_set, text in hosts_text_list:
-                    lines.append(in_gray(collect_hostlist(host_set)) + 
-                                 ": " + text)
+                for host, text in sorted(hosts_text_list, key=lambda x:x[0]):
+                    lines.append(in_gray(host) + ": " + text)
                     
         self.labels = self._labels
         self.N_diffs = self._diff_counter.next()-1
