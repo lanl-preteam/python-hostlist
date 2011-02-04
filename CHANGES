@@ -1,3 +1,27 @@
+Version 1.11 (2011-02-04)
+
+    Add --collect-similar mode to pshbak.
+
+Version 1.10 (2010-10-11)
+
+    Add rewritten version of dbuck.
+
+    Add some pshbak improvements.
+
+Version 1.9 (2010-09-22)
+
+    Add pshbak, a dshbak replacement.
+
+Version 1.8 (2010-09-08)
+
+    Add dbuck man page.
+
+    Add --substitute option to hostlist.
+
+Version 1.7 (2010-07-08)
+
+    Add dbuck utility.
+
 Version 1.6 (2009-10-02)
 
     Add --non-empty and --quiet.
