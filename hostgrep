@@ -114,11 +114,17 @@ else:
     else:
         do_print_filename = False
 
-if len(args) == 1:
-    # Seach stdin
-    search(sys.stdin, "(standard input)")
-else:
-    for filename in args[1:]:
-        f = open(filename)
-        search(f, filename)
-        f.close()
+try:
+    if len(args) == 1:
+        # Seach stdin
+        search(sys.stdin, "(standard input)")
+    else:
+        for filename in args[1:]:
+            f = open(filename)
+            search(f, filename)
+            f.close()
+except KeyboardInterrupt:
+    sys.exit()
+except IOError as e:
+    sys.stderr.write(e.strerror + " '" + e.filename + "'\n")
+    sys.exit(1)
