@@ -31,7 +31,7 @@ import optparse
 import operator
 import re
 
-from hostlist import expand_hostlist, collect_hostlist, numerically_sorted, BadHostlist, __version__ as library_version
+from hostlist import expand_hostlist, collect_hostlist, numerically_sorted, parse_slurm_tasks_per_node, BadHostlist, __version__ as library_version
 
 # Python 3 compatibility
 try:
@@ -97,6 +97,9 @@ op.add_option("-a", "--append",
 op.add_option("-S", "--substitute",
               action="store", type="string",
               help="regular expression substitution ('from,to') to apply to each hostname when outputting an expanded list")
+op.add_option("--append-slurm-tasks",
+              action="store", type="string",
+              help="append task count based on the passed SLURM_TASKS_PER_NODE string")
 op.add_option("--version",
               action="store_true",
               help="show version")
@@ -145,8 +148,20 @@ elif opts.expand or opts.expand_deprecated:
             sys.stderr.write("Bad --substitute option: '%s'\n" % opts.substitute)
             sys.exit(os.EX_DATAERR)
 
-    print opts.separator.join([opts.prepend + host + opts.append
-                               for host in sorted_hosts])
+    if opts.append_slurm_tasks:
+        try:
+            task_list = parse_slurm_tasks_per_node(opts.append_slurm_tasks)
+        except BadHostlist, e:
+            sys.stderr.write("Bad task list encountered: %s\n" % e.args)
+            sys.exit(os.EX_DATAERR)
+        if len(task_list) != len(sorted_hosts):
+            sys.stderr.write("Length of tasks list != number of hostnames\n")
+            sys.exit(os.EX_DATAERR)
+        print opts.separator.join([opts.prepend + host + opts.append + str(tasks)
+                                   for host, tasks in zip(sorted_hosts, task_list)])
+    else:
+        print opts.separator.join([opts.prepend + host + opts.append
+                                   for host in sorted_hosts])
 else:
     try:
         print collect_hostlist(res)

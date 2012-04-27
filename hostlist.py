@@ -352,6 +352,37 @@ def handle_int_nonint(int_nonint_tuple):
     else:
         return int_nonint_tuple[1]
 
+# Parse SLURM_TASKS_PER_NODE into a list of task numbers
+#
+# Description from the SLURM sbatch man page:
+#              Number of tasks to be initiated on each node. Values
+#              are comma separated and in the same order as
+#              SLURM_NODELIST.  If two or more consecutive nodes are
+#              to have the same task count, that count is followed by
+#              "(x#)" where "#" is the repetition count. For example,
+#              "SLURM_TASKS_PER_NODE=2(x3),1" indicates that the first
+#              three nodes will each execute three tasks and the
+#              fourth node will execute one task.
+
+def parse_slurm_tasks_per_node(s):
+    res = []
+    for part in s.split(","):
+        m = re.match(r'^([0-9]+)(\(x([0-9]+)\))?$', part)
+        if m:
+            tasks = int(m.group(1))
+            repetitions = m.group(3)
+            if repetitions is None:
+                repetitions = 1
+            else:
+                repetitions = int(repetitions)
+            if repetitions > MAX_SIZE:
+                raise BadHostlist, "task list repetitions too large"
+            for i in range(repetitions):
+                res.append(tasks)
+        else:
+            raise BadHostlist, "bad task list syntax"
+    return res
+
 #
 # Keep this part to tell users where the command line interface went
 #

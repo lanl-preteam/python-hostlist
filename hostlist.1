@@ -77,6 +77,20 @@ with
 The substitution is done before appending and/or prepending strings.
 The default is to do no substitution.
 .TP
+.BI "--append-slurm-tasks=" SLURM_TASKS_PER_NODE
+Append the number of tasks parsed from the
+.I SLURM_TASKS_PER_NODE
+string. You need to use
+.B -e/--expand
+and you probably need to specify
+.B -a/--append
+and
+.B -s/--separator
+too. NOTE: The hostlist is always sorted internally by this program. The
+task counts from 
+.I SLURM_TASKS_PER_NODE
+is then applied to each hostname in the sorted list.
+.TP
 .B --version
 Show the version of the utility and the underlying Python library.
 .SH EXAMPLES
