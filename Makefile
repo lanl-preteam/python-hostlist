@@ -5,7 +5,7 @@ VERSIONED_FILES = hostlist.py hostlist hostlist.1 \
 		  setup.py python-hostlist.spec README 
 NON_VERSIONED_FILES = test COPYING MANIFEST.in CHANGES Makefile
 
-VERSION = 1.11
+VERSION = 1.12
 RELEASE = 1
 
 all:
