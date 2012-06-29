@@ -31,6 +31,30 @@ output if it is included in the first hostlist but not any of the following.
 Compute the symmetric difference of the hostlists. A hostname is present in the
 output if it is included in an odd number of the hostlists.
 .TP
+.BI "-o " OFFSET ", --offset=" OFFSET
+Filter the result to skip
+.I OFFSET
+hosts from the beginning. If
+.I OFFSET
+is not less than the number of hosts in the result, the result will
+become empty. If
+.I OFFSET
+is negative, keep
+.I -OFFSET
+hosts from the end of the result.
+The default is to skip nothing.
+.TP
+.BI "-l " LIMIT ", --limit=" LIMIT
+Filter the result to limit it to the first
+.I LIMIT
+hosts. If
+.I LIMIT
+is not less than the number of hosts in the result, this option does nothing.
+This filter is applied after the
+.B --offset
+filter (see above).
+The default is to have no limit.
+.TP
 .B -c, --collapse
 Output the result as a hostlist expression. This is the default.
 .TP

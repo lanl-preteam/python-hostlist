@@ -69,6 +69,12 @@ op.add_option("-x", "--symmetric-difference",
 op.add_option("-c", "--collapse",
               action="store_false", dest="expand",
               help="output the result as a hostlist expression (default)")
+op.add_option("-o", "--offset",
+              action="store", type="int",
+              help="skip OFFSET hosts from the beginning (default: skip nothing)")
+op.add_option("-l", "--limit",
+              action="store", type="int",
+              help="limit result to the LIMIT first hosts (default: no limit)")
 op.add_option("-n", "--count",
               action="store_true",
               help="output the number of hosts instead of a hostlist")
@@ -132,14 +138,22 @@ if not func_args:
 if opts.expand_deprecated:
     sys.stderr.write("WARNING: Option -w is deprecated. Use -e or --expand instead!\n")
 
-res = opts.func(func_args)
+res = numerically_sorted(opts.func(func_args))
+
+# Handle --offset
+if opts.offset is not None:
+    res = res[opts.offset:]
+
+# Handle --limit
+if opts.limit is not None:
+    res = res[:opts.limit]
 
 if opts.quiet:
     pass
 elif opts.count:
     print len(res)
 elif opts.expand or opts.expand_deprecated:
-    sorted_hosts = numerically_sorted(res)
+    sorted_hosts = res # we now sort earlier then before
     if opts.substitute:
         try:
             from_re, to = opts.substitute.split(",", 1)
