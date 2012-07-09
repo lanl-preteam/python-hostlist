@@ -125,6 +125,6 @@ try:
             f.close()
 except KeyboardInterrupt:
     sys.exit()
-except IOError as e:
+except IOError, e:
     sys.stderr.write(e.strerror + " '" + e.filename + "'\n")
     sys.exit(1)
