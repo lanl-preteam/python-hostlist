@@ -61,13 +61,12 @@ def search(f, filename):
         line_no += 1
         words = hosts_from_line(line)
         if opts.all:
-            if search_set <= words:
-                emit(line, filename, line_no)
+            does_match = search_set <= words
         else:
-            if search_set & words:
-                emit(line, filename, line_no)
-                
-    
+            does_match = search_set & words
+        if bool(does_match) ^ bool(opts.invert_match):
+            emit(line, filename, line_no)
+
 
 # MAIN
 
@@ -85,6 +84,9 @@ op.add_option("-h", "--no-filename",
 op.add_option("-H", "--with-filename",
               action="store_true", dest = "print_filename",
               help="Show filename before match (default for > 1 file)")
+op.add_option("-v", "--invert-match",
+              action="store_true",
+              help="Invert the sense of matching, to select non-matching lines.")
 op.add_option("-n", "--line-number",
               action="store_true",
               help="Show line number before match")
