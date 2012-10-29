@@ -106,6 +106,9 @@ op.add_option("-S", "--substitute",
 op.add_option("--append-slurm-tasks",
               action="store", type="string",
               help="append task count based on the passed SLURM_TASKS_PER_NODE string")
+op.add_option("--chop",
+              action="store", type="int",
+              help="chop into chunks of this size when doing --collapse (default: all in one chunk)")
 op.add_option("--version",
               action="store_true",
               help="show version")
@@ -177,11 +180,21 @@ elif opts.expand or opts.expand_deprecated:
         print opts.separator.join([opts.prepend + host + opts.append
                                    for host in sorted_hosts])
 else:
-    try:
-        print collect_hostlist(res)
-    except BadHostlist, e:
-        sys.stderr.write("Bad hostname encountered: %s\n" % e.args)
-        sys.exit(os.EX_DATAERR)
+    if opts.chop and opts.chop > 0:
+        chunk_size = opts.chop
+    else:
+        chunk_size = len(res)
+    i=0
+    while i < len(res):
+        try:
+            if i > 0:
+                sys.stdout.write(opts.separator)
+            sys.stdout.write(opts.prepend + collect_hostlist(res[i:i+chunk_size]) + opts.append)
+            i += chunk_size
+        except BadHostlist, e:
+            sys.stderr.write("Bad hostname encountered: %s\n" % e.args)
+            sys.exit(os.EX_DATAERR)
+    sys.stdout.write("\n")
 
 if opts.non_empty and len(res) == 0:
     sys.exit(os.EX_NOINPUT)

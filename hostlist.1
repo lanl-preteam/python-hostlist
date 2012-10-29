@@ -56,7 +56,9 @@ filter (see above).
 The default is to have no limit.
 .TP
 .B -c, --collapse
-Output the result as a hostlist expression. This is the default.
+Output the result as a hostlist expression. This is the default. See the
+.B --chop
+option for splitting into multiple hostlists of a certain size.
 .TP
 .B -n, --count
 Output the number of hostnames in the result.
@@ -77,19 +79,19 @@ Return success if the resulting hostlist is non-empty and failure if it is empty
 .BI "-s " SEPARATOR ", --separator=" SEPARATOR
 Use
 .I SEPARATOR
-as the separator between the hostnames in the expanded list.
+as the separator between the hostnames in the expanded list (and between (chopped) hostlists in collapsed mode).
 The default is a newline.
 .TP
 .BI "-p " PREPEND ", --prepend=" PREPEND
 Output
 .I PREPEND
-before each hostname in the expanded list.
+before each hostname in the expanded list (and before each hostlist in collapsed mode).
 The default is to prepend nothing.
 .TP
 .BI "-a " APPEND ", --append=" APPEND
 Output
 .I APPEND
-after each hostname in the expanded list.
+after each hostname in the expanded list (and after each hostlist in collapsed mode).
 The default is to append nothing.
 .TP
 .BI "-S " FROM,TO ", --substitute=" FROM,TO
@@ -114,6 +116,13 @@ too. NOTE: The hostlist is always sorted internally by this program. The
 task counts from 
 .I SLURM_TASKS_PER_NODE
 is then applied to each hostname in the sorted list.
+.TP
+.BI "--chop=" CHUNKSIZE
+When outputting as collapsed hostlist (the default mode
+.BR --collapse )
+split into hostlists of size
+.I CHUNKSIZE
+and output each hostlist separately. The last hostlist may be smaller than the rest.
 .TP
 .B --version
 Show the version of the utility and the underlying Python library.
