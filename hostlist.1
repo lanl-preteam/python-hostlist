@@ -95,12 +95,11 @@ after each hostname in the expanded list (and after each hostlist in collapsed m
 The default is to append nothing.
 .TP
 .BI "-S " FROM,TO ", --substitute=" FROM,TO
-Apply a regular expression substitution to each host in the expanded list,
+Apply a regular expression substitution to each hostname,
 replacing all
 .I FROM
 with
 .IR TO .
-The substitution is done before appending and/or prepending strings.
 The default is to do no substitution.
 .TP
 .BI "--append-slurm-tasks=" SLURM_TASKS_PER_NODE

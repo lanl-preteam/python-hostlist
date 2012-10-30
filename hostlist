@@ -102,7 +102,7 @@ op.add_option("-a", "--append",
               help="string to append to each hostname when outputting an expanded list")
 op.add_option("-S", "--substitute",
               action="store", type="string",
-              help="regular expression substitution ('from,to') to apply to each hostname when outputting an expanded list")
+              help="regular expression substitution ('from,to') to apply to each hostname")
 op.add_option("--append-slurm-tasks",
               action="store", type="string",
               help="append task count based on the passed SLURM_TASKS_PER_NODE string")
@@ -141,7 +141,20 @@ if not func_args:
 if opts.expand_deprecated:
     sys.stderr.write("WARNING: Option -w is deprecated. Use -e or --expand instead!\n")
 
-res = numerically_sorted(opts.func(func_args))
+# Set up initial hostlist from the arguments and the function
+res = opts.func(func_args)
+
+# Handle --substitute
+if opts.substitute:
+    try:
+        from_re, to = opts.substitute.split(",", 1)
+        res = [re.sub(from_re, to, host) for host in res]
+    except (ValueError, re.error):
+        sys.stderr.write("Bad --substitute option: '%s'\n" % opts.substitute)
+        sys.exit(os.EX_DATAERR)
+
+# Sort numerically
+res = numerically_sorted(res)
 
 # Handle --offset
 if opts.offset is not None:
@@ -151,35 +164,28 @@ if opts.offset is not None:
 if opts.limit is not None:
     res = res[:opts.limit]
 
+# Output in the right way
 if opts.quiet:
     pass
 elif opts.count:
     print len(res)
 elif opts.expand or opts.expand_deprecated:
-    sorted_hosts = res # we now sort earlier then before
-    if opts.substitute:
-        try:
-            from_re, to = opts.substitute.split(",", 1)
-            sorted_hosts = [re.sub(from_re, to, host) for host in sorted_hosts]
-        except (ValueError, re.error):
-            sys.stderr.write("Bad --substitute option: '%s'\n" % opts.substitute)
-            sys.exit(os.EX_DATAERR)
-
     if opts.append_slurm_tasks:
         try:
             task_list = parse_slurm_tasks_per_node(opts.append_slurm_tasks)
         except BadHostlist, e:
             sys.stderr.write("Bad task list encountered: %s\n" % e.args)
             sys.exit(os.EX_DATAERR)
-        if len(task_list) != len(sorted_hosts):
+        if len(task_list) != len(res):
             sys.stderr.write("Length of tasks list != number of hostnames\n")
             sys.exit(os.EX_DATAERR)
         print opts.separator.join([opts.prepend + host + opts.append + str(tasks)
-                                   for host, tasks in zip(sorted_hosts, task_list)])
+                                   for host, tasks in zip(res, task_list)])
     else:
         print opts.separator.join([opts.prepend + host + opts.append
-                                   for host in sorted_hosts])
+                                   for host in res])
 else:
+    # --collapse
     if opts.chop and opts.chop > 0:
         chunk_size = opts.chop
     else:
@@ -196,5 +202,6 @@ else:
             sys.exit(os.EX_DATAERR)
     sys.stdout.write("\n")
 
+# Exit
 if opts.non_empty and len(res) == 0:
     sys.exit(os.EX_NOINPUT)
