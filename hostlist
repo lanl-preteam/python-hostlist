@@ -149,12 +149,13 @@ if opts.substitute:
     try:
         from_re, to = opts.substitute.split(",", 1)
         res = [re.sub(from_re, to, host) for host in res]
+        res = set(res) # remove duplicates that may have been created
     except (ValueError, re.error):
         sys.stderr.write("Bad --substitute option: '%s'\n" % opts.substitute)
         sys.exit(os.EX_DATAERR)
 
 # Sort numerically
-res = numerically_sorted(res)
+res = numerically_sorted(res) # res can be list or set before this line
 
 # Handle --offset
 if opts.offset is not None:
