@@ -49,6 +49,9 @@ Invert the sense of matching, to select non-matching lines.
 .TP
 .B -n, --line-number
 Show line number before match.
+.TP
+.BI --restrict= REGEXP
+Restrict host matching to the part of the line that is matched as group 1 by this regexp.
 
 .SH EXAMPLES
 .TP
@@ -62,6 +65,12 @@ are present (as a hostname or part of a hostlist). Do not show filenames:
 .B hostgrep
 -h
 n[100-102] /var/log/slurm/accounting/*
+.TP
+Search for lines on stdin where nodes in n[1-8] are mentioned \
+in the part of the line that comes before the first colon:
+.B hostgrep
+--restrict='^([^:]*):'
+n[1-8]
 
 .SH BUGS
 The program has a rather naive notion of what constitutes hostnames

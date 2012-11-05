@@ -34,6 +34,14 @@ def die(s, exit_code = 1):
 
 finder = re.compile(r'[A-Za-z0-9]+(\[[0-9,-]+\])*')
 def hosts_from_line(line):
+    # --restrict option
+    if restrict_regexp:
+        try:
+            m = restrict_regexp.search(line)
+            line = m.group(1)
+        except Exception:
+            line = ""
+
     words = set()
     for m in finder.finditer(line):
         word = m.group(0)
@@ -90,6 +98,9 @@ op.add_option("-v", "--invert-match",
 op.add_option("-n", "--line-number",
               action="store_true",
               help="Show line number before match")
+op.add_option("--restrict",
+              action="store", type="string",
+              help="Restrict host matching to the part of the line that is matched as group 1 by this regexp")
 op.add_option("--help", action="help", help="Show help")
 op.add_option("--version",
               action="store_true",
@@ -115,6 +126,14 @@ else:
         do_print_filename = True
     else:
         do_print_filename = False
+
+if opts.restrict:
+    try:
+        restrict_regexp = re.compile(opts.restrict)
+    except Exception:
+        die("Bad --restrict regexp %s" % opts.restrict)
+else:
+    restrict_regexp = None
 
 try:
     if len(args) == 1:
