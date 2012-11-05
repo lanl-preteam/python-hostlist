@@ -32,17 +32,23 @@ Print a line if any hostname in the given
 .I HOSTLIST
 is found in the line (the default).
 .TP
-.B -h
+.B -h, --no-filename
 Do not show the filename in front of matching line. This is the default
 if at most one
 .I FILE
 is given.
 .TP
-.B -H
+.B -H, --with-filename
 Show the filename in front of matching lines. This is the default
 if two or more
 .I FILES
 are given.
+.TP
+.B -v, --invert-match
+Invert the sense of matching, to select non-matching lines.
+.TP
+.B -n, --line-number
+Show line number before match.
 
 .SH EXAMPLES
 .TP
