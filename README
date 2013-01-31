@@ -48,10 +48,20 @@ If you do not have the tar archive, create it first:
   python setup.py sdist
   rpmbuild -ta dist/python-hostlist-#VERSION#.tar.gz
 
-You may also install directly by running:
+If you have cloned the git repository, you should also be
+able to build RPM packages using "make rpms".
+
+You may also install directly by running the following commands
+if you have unpacked a tarball:
 
   python setup.py build   (as yourself)
-  python setup.py install (as root) 
+  python setup.py install (as root)
+
+If you have cloned the git repository, you will have to do
+
+  make prepare; cd versioned
+
+before building/installing via setup.py.
 
 
 RELEASES AND FEEDBACK
