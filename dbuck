@@ -115,7 +115,7 @@ def refine_data(rawlist):
         tmp = None
         try:
             tmp = float(sline[opts.key])
-        except ValueError:
+        except (ValueError, IndexError):
             pass
         if tmp != None:
             cleandata.append([ sline[0].strip(":"), tmp ])
@@ -126,9 +126,9 @@ def refine_data(rawlist):
 
     return (cleandata, nreject)
 
-def addoverflowbuckets(blist, vmin, vmax):
+def addoverflowbuckets(blist, rmin, vmax):
     blist.insert(0, {'ub': vmin, 'special': 'underflow'})
-    blist.append({'ub': None, 'special':'overflow'})
+    blist.append({'ub': vmax, 'special':'overflow'})
     return
 
 # New bucket creation function
@@ -140,6 +140,7 @@ def create_buckets_new(valuelist, num, vmin, vmax):
     for b in range(num):
         ub += (vmax-vmin) / num
         blist.append({'ub': ub})
+    blist[-1]['ub'] = vmax
     return blist
 
 
@@ -191,7 +192,7 @@ if (opts.show_overflow and not opts.range):
 
 if opts.range:
     try:
-        (vmin, vmax) = map(float, opts.range.split("-"))
+        (rmin, rmax) = map(float, opts.range.split("-"))
     except ValueError:
         print "Error: invalid range specified"
         exit(1)
@@ -207,40 +208,38 @@ except KeyboardInterrupt:
         print "Info: Caught keyboard interrupt, exiting..."
     exit(1)
 
-if len(rawdata) <= 3:
-    print "Error: not enough indata (only %i line(s))" % len(rawdata)
-    exit(1)
-
 # do list of str -> list of [ hostname, value ] and discard bad lines
 (data, nbadlines) = refine_data(rawdata)
+if (len(data) == 0):
+    print "Error: No data found"
+    exit(1)
+
 # sort it
 data.sort(lambda a, b: cmp(a[1], b[1]))
 # put the values in a simple list
 valuelist = map(lambda(x): x[1], data)
 
-if not opts.range:
+if opts.range:
     vmin = min(valuelist)
     vmax = max(valuelist)
+else:
+    rmin = vmin = min(valuelist)
+    rmax = vmax = max(valuelist)
 
 if opts.range:
-    nunder = len([ 1 for x in valuelist if x < vmin ])
-    nover = len([ 1 for x in valuelist if x > vmax ])
+    nunder = len([ 1 for x in valuelist if x < rmin ])
+    nover = len([ 1 for x in valuelist if x > rmax ])
 if opts.debug:
     print "Debug: cleaned up data: %s" % str(data)
 
 # Create the bucket list
-#pprint(["data", data])
-newbuckets = create_buckets_new(valuelist, opts.nbuckets, vmin, vmax)
+newbuckets = create_buckets_new(valuelist, opts.nbuckets, rmin, rmax)
 if opts.range:
-    addoverflowbuckets(newbuckets, vmin, vmax)
-#buckets = create_buckets(valuelist)
-#pprint(["buckets", buckets])
-#pprint(["newbuckets", newbuckets])
-#new
+    addoverflowbuckets(newbuckets, rmin, vmax)
+
 for nbucket in xrange(len(newbuckets)):
     newbuckets[nbucket]['nodelist'] = []
-# dual purpose line 1) change last ub from ~max for ==max, 2) add ub for overflow
-newbuckets[-1]['ub'] = valuelist[-1]
+    
 if opts.debug:
     print "Debug: bucketlist created:"
     for nbucket in xrange(len(newbuckets)):
@@ -269,7 +268,8 @@ if opts.statistics:
 # Populate the buckets with data
 currentbucket = 0
 for (node, value) in data:
-    while (newbuckets[currentbucket]['ub'] < value):
+    while ((newbuckets[currentbucket]['ub'] < value) or
+           (value == rmin and currentbucket == 0 and 'special' in newbuckets[0])):
         currentbucket += 1
         if opts.debug:
             print "Debug: bumping bucket number..."
