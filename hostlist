@@ -39,6 +39,14 @@ try:
 except ImportError:
     pass # earlier Python versions have this in __builtin__
 
+# Helper functions
+def flatten(list_of_lists):
+    res = []
+    for l in list_of_lists:
+        res.extend(l)
+    return res
+
+# Operators
 
 def func_union(args):
     return reduce(operator.or_, args)
@@ -106,6 +114,9 @@ op.add_option("-S", "--substitute",
 op.add_option("--append-slurm-tasks",
               action="store", type="string",
               help="append task count based on the passed SLURM_TASKS_PER_NODE string")
+op.add_option("--repeat-slurm-tasks",
+              action="store", type="string",
+              help="repeat hostnames based on the passed SLURM_TASKS_PER_NODE string")
 op.add_option("--chop",
               action="store", type="int",
               help="chop into chunks of this size when doing --collapse (default: all in one chunk)")
@@ -165,6 +176,25 @@ if opts.offset is not None:
 if opts.limit is not None:
     res = res[:opts.limit]
 
+# Handle options using SLURM task lists
+if opts.append_slurm_tasks and opts.repeat_slurm_tasks:
+    sys.stderr.write("You cannot use --append-slurm-tasks and --repeat--slurm-tasks at the same time.\n")
+    sys.exit(os.EX_DATAERR)
+elif opts.append_slurm_tasks or opts.repeat_slurm_tasks:
+    if opts.append_slurm_tasks:
+        task_list =  opts.append_slurm_tasks
+    else:
+        task_list =  opts.repeat_slurm_tasks
+
+    try:
+        task_list = parse_slurm_tasks_per_node(task_list)
+    except BadHostlist, e:
+        sys.stderr.write("Bad task list encountered: %s\n" % e.args)
+        sys.exit(os.EX_DATAERR)
+    if len(task_list) != len(res):
+        sys.stderr.write("Length of tasks list != number of hostnames\n")
+        sys.exit(os.EX_DATAERR)
+
 # Output in the right way
 if opts.quiet:
     pass
@@ -172,16 +202,12 @@ elif opts.count:
     print len(res)
 elif opts.expand or opts.expand_deprecated:
     if opts.append_slurm_tasks:
-        try:
-            task_list = parse_slurm_tasks_per_node(opts.append_slurm_tasks)
-        except BadHostlist, e:
-            sys.stderr.write("Bad task list encountered: %s\n" % e.args)
-            sys.exit(os.EX_DATAERR)
-        if len(task_list) != len(res):
-            sys.stderr.write("Length of tasks list != number of hostnames\n")
-            sys.exit(os.EX_DATAERR)
         print opts.separator.join([opts.prepend + host + opts.append + str(tasks)
                                    for host, tasks in zip(res, task_list)])
+    elif opts.repeat_slurm_tasks:
+        repeated_hosts = flatten([[host]*tasks for host, tasks in zip(res, task_list)])
+        print opts.separator.join([opts.prepend + host + opts.append
+                                   for host in repeated_hosts])
     else:
         print opts.separator.join([opts.prepend + host + opts.append
                                    for host in res])
