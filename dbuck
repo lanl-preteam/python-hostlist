@@ -106,7 +106,7 @@ def refine_data(rawlist):
         # No winner found (or winner was 'bad line')
         if not opts.key or (opts.key == 0):
             print "Error: Unable to auto-detect KEY from data"
-            exit(1)
+            sys.exit(1)
 
     nreject = 0
     cleandata = []
@@ -185,7 +185,7 @@ if args != []:
 
 if opts.nbuckets < 1:
     print "Error: number of buckets must be a positive integer"
-    exit(1)
+    sys.exit(1)
 
 if (opts.show_overflow and not opts.range):
     print "Warning: --show-overflow only has meaning with --range"
@@ -195,7 +195,7 @@ if opts.range:
         (rmin, rmax) = map(float, opts.range.split("-"))
     except ValueError:
         print "Error: invalid range specified"
-        exit(1)
+        sys.exit(1)
 
 termwidth = gettermwidth()
 if opts.debug:
@@ -206,13 +206,16 @@ try:
 except KeyboardInterrupt:
     if opts.verbose:
         print "Info: Caught keyboard interrupt, exiting..."
-    exit(1)
+    sys.exit(1)
 
 # do list of str -> list of [ hostname, value ] and discard bad lines
+if (len(rawdata) == 0):
+    print "Error: No data found"
+    sys.exit(1)
 (data, nbadlines) = refine_data(rawdata)
 if (len(data) == 0):
     print "Error: No data found"
-    exit(1)
+    sys.exit(1)
 
 # sort it
 data.sort(lambda a, b: cmp(a[1], b[1]))
@@ -239,7 +242,7 @@ if opts.range:
 
 for nbucket in xrange(len(newbuckets)):
     newbuckets[nbucket]['nodelist'] = []
-    
+
 if opts.debug:
     print "Debug: bucketlist created:"
     for nbucket in xrange(len(newbuckets)):
