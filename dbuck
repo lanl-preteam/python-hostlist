@@ -67,6 +67,10 @@ def refine_data(rawlist):
             rawlist[i] = tmp
 
     if not opts.key:
+        if len(rawlist) < 3:
+            print "Error: not enough data for auto-detect, please use -k"
+            sys.exit(1)
+
         # list to hold candidates for KEY
         key = []
         # Lets have a look at the last three lines
