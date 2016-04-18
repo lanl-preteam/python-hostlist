@@ -131,7 +131,7 @@ def refine_data(rawlist):
     return (cleandata, nreject)
 
 def addoverflowbuckets(blist, rmin, vmax):
-    blist.insert(0, {'ub': vmin, 'special': 'underflow'})
+    blist.insert(0, {'ub': rmin, 'special': 'underflow'})
     blist.append({'ub': vmax, 'special':'overflow'})
     return
 
