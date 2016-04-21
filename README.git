@@ -28,7 +28,7 @@ Making a release
 
 *) Change VERSION to the final version number (and reset RELEASE).
 
-*) Make sure CHANGES contains what it should.
+*) Add changes to the %changelog in the spec file.
 
 *) Commit the changes to git, mentioning the new version number in
    the commit message ("Version 1.5." or similar).

@@ -1,3 +1,7 @@
+The CHANGES file does not seem to be updated after 1.11.
+We take the opportunity to start recording changes in
+the spec file %changelog instead.
+
 Version 1.11 (2011-02-04)
 
     Add --collect-similar mode to pshbak.

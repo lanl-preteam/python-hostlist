@@ -53,3 +53,10 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man1/pshbak.1.gz
 /usr/share/man/man1/dbuck.1.gz
 %changelog
+* Thu Apr 21 2016 Kent Engström <kent@nsc.liu.se> - 1.15-1
+- Add missing options to the hostgrep(1) man page.
+- Add --restrict option to hostgrep.
+- Add --repeat-slurm-tasks option.
+- dbuck: major rewrite, add -r/-o, remove -b/-m
+- dbuck: add a check for sufficient input when not using -k
+- dbuck: Fix incorrect upper bound of underflow bucket
