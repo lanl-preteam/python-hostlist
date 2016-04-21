@@ -19,14 +19,14 @@ Data is assumed to be N lines of data one for each host/entity. By default dbuck
 .B -h, --help
 Print help message
 .TP
-.BI "-b " LOW-HI ", --bucket=" LOW-HI
-Explicitly specify a bucket (option may be given more than once)
+.BI "-r" LOW-HI ", --range=" LOW-HI
+Explicitly specify a range from minimum value of lowest bucket to maximum value of highest bucket (default: minimum value to maximum value seen in input data)
 .TP
 .BI "-k " KEY ", --key=" KEY
 Use data at position KEY (default: auto)
 .TP
-.BI -m, --merge-buckets
-Adaptively merge buckets when possible (default: False)
+.B -o, --show-overflow
+Include two extra buckets for overflow and underflow. This option is only valid with a custom range (-r, --range). Default behavior is to count the over- and underflows and present them in the statistical summary.
 .TP
 .BI "-n " NBUCKETS ", --nbuckets=" NBUCKETS
 Number of buckets to use (default: 5)
@@ -74,10 +74,6 @@ $ cat test/dbuck.testdata | ./dbuck -s -n 4 --verbose
  138.50-162.00:   2  n[1,3]
  162.00-185.50:   1  n6
  185.50-209.00:   3  n[2,4-5]
-
-
-.SH BUGS
-When using either --merge-buckets or --bucket don't expect dbuck to give you exactly --nbuckets buckets. Also, don't expect dbuck to protect you from yourself should you specify unreasonable buckets.
 
 .SH AUTHOR
 Written by Peter Kjellström <cap@nsc.liu.se>.
