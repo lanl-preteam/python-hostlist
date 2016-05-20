@@ -26,7 +26,7 @@ them.
 
 
 %build
-%{__python} setup.py build
+%{__python} setup.py build --executable="/usr/bin/python -E"
 
 
 %install
