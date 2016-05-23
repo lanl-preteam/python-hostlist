@@ -53,6 +53,9 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man1/pshbak.1.gz
 /usr/share/man/man1/dbuck.1.gz
 %changelog
+* Mon May 23 2016 Kent Engström <kent@nsc.liu.se> - 1.16-1
+- Ignore PYTHONPATH et al. in installed scripts
+
 * Thu Apr 21 2016 Kent Engström <kent@nsc.liu.se> - 1.15-1
 - Add missing options to the hostgrep(1) man page.
 - Add --restrict option to hostgrep.
