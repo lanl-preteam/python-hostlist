@@ -19,11 +19,14 @@ Data is assumed to be N lines of data one for each host/entity. By default dbuck
 .B -h, --help
 Print help message
 .TP
-.BI "-r" LOW-HI ", --range=" LOW-HI
+.BI "-r " LOW-HI ", --range=" LOW-HI
 Explicitly specify a range from minimum value of lowest bucket to maximum value of highest bucket (default: minimum value to maximum value seen in input data)
 .TP
 .BI "-k " KEY ", --key=" KEY
 Use data at position KEY (default: auto)
+.TP
+.B -z, --zero
+Make dbuck generate buckets from zero (0.0) instead of lowest value seen in indata.
 .TP
 .B -o, --show-overflow
 Include two extra buckets for overflow and underflow. This option is only valid with a custom range (-r, --range). Default behavior is to count the over- and underflows and present them in the statistical summary.
