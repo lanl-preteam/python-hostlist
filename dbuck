@@ -59,13 +59,11 @@ def stdev(list):
 
 # clean and refine indata: list of STRING -> list of [ "hostname", float vaule ]
 def refine_data(rawlist):
-    if opts.debug:
-        print "Debug: read in %i lines of data" % len(rawlist)
+    dprint("read in %i lines of data" % len(rawlist))
 
     # Transform additional separators -> " "
     for char in opts.field_separators:
-        if opts.debug:
-            print "Debug: adding additional field separator: \"%s\"" % char
+        dprint("adding additional field separator: \"%s\"" % char)
         for i in range(len(rawlist)):
             tmp = rawlist[i].replace(char, " ")
             rawlist[i] = tmp
@@ -91,12 +89,10 @@ def refine_data(rawlist):
                 except ValueError:
                     pass
                 if tmp != None:
-                    if opts.debug:
-                        print "Debug: auto-detect row=%i found data at column %i" % (lnum, i)
+                    dprint("auto-detect row=%i found data at column %i" % (lnum, i))
                     key.append(i)
                     break
-        if opts.debug:
-            print "Debug: key list after auto-detect: %s" % str(key)
+        dprint("key list after auto-detect: %s" % str(key))
 
         # If more than half of the investigated lines have the same candidate...
         for candidate in key:
@@ -141,8 +137,7 @@ def addoverflowbuckets(blist, rmin, vmax):
 
 # New bucket creation function
 def create_buckets_new(valuelist, num, vmin, vmax):
-    if opts.debug:
-        print "Debug: range is %f to %f split into %i buckets" % (vmin, vmax, num)
+    dprint("range is %f to %f split into %i buckets" % (vmin, vmax, num))
     blist = []
     ub = vmin
     for b in range(num):
@@ -212,8 +207,7 @@ if opts.range:
         sys.exit(1)
 
 termwidth = gettermwidth()
-if opts.debug:
-    print "Debug: termwidth: %i" % termwidth
+dprint("termwidth: %i" % termwidth)
 
 try:
     rawdata = sys.stdin.readlines()
@@ -250,8 +244,7 @@ else:
 if (opts.range or opts.zero):
     nunder = len([ 1 for x in valuelist if x < rmin ])
     nover = len([ 1 for x in valuelist if x > rmax ])
-if opts.debug:
-    print "Debug: cleaned up data: %s" % str(data)
+dprint("cleaned up data: %s" % str(data))
 
 # Create the bucket list
 newbuckets = create_buckets_new(valuelist, opts.nbuckets, rmin, rmax)
@@ -262,9 +255,9 @@ for nbucket in xrange(len(newbuckets)):
     newbuckets[nbucket]['nodelist'] = []
 
 if opts.debug:
-    print "Debug: bucketlist created:"
+    dprint("bucketlist created:")
     for nbucket in xrange(len(newbuckets)):
-        print "Debug:  bucket[%i] %f" % (nbucket, newbuckets[nbucket]['ub'])
+        dprint(" bucket[%i] %f" % (nbucket, newbuckets[nbucket]['ub']))
 
 # Dump out some statistics
 if opts.statistics:
@@ -292,19 +285,16 @@ for (node, value) in data:
     while ((newbuckets[currentbucket]['ub'] < value) or
            (value == rmin and currentbucket == 0 and 'special' in newbuckets[0])):
         currentbucket += 1
-        if opts.debug:
-            print "Debug: bumping bucket number..."
-    if opts.debug:
-        print "Debug: %i: adding %s %.2f" % (currentbucket, node, value)
+        dprint("bumping bucket number...")
+    dprint("%i: adding %s %.2f" % (currentbucket, node, value))
     newbuckets[currentbucket]['nodelist'].append(node)
 
 # Compute number of characters needed for printing values and number of nodes
 ncharvalue = len(str("%.2f" % valuelist[-1]))
 ncharnodecnt = max(len(str(max( [ len(bucket['nodelist']) for bucket in newbuckets ] ))), 3)
 
-if opts.debug:
-    print "Debug: value pad: %i" % ncharvalue
-    print "Debug: node count pad: %i" % ncharnodecnt
+dprint("value pad: %i" % ncharvalue)
+dprint("node count pad: %i" % ncharnodecnt)
 
 # Print out a header if --verbose
 if opts.verbose:
