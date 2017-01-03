@@ -156,6 +156,9 @@ optp = optparse.OptionParser(usage="usage: %prog [options] < DATA")
 optp.add_option("-r", "--range",
                 action="store", type="string", metavar="LOW-HI",
                 help="explicitly specify a value range")
+optp.add_option("-z", "--zero",
+                action="store_true", default=False,
+                help="first bucket starts at zero not at lowest value")
 optp.add_option("-o", "--show-overflow",
                 action="store_true", default=False,
                 help="include two extra buckets (over- and under-flow)")
@@ -191,8 +194,8 @@ if opts.nbuckets < 1:
     print "Error: number of buckets must be a positive integer"
     sys.exit(1)
 
-if (opts.show_overflow and not opts.range):
-    print "Warning: --show-overflow only has meaning with --range"
+if (opts.show_overflow and not (opts.range or opts.zero)):
+    print "Warning: --show-overflow only has meaning with --range or --zero"
 
 if opts.range:
     try:
@@ -229,11 +232,15 @@ valuelist = map(lambda(x): x[1], data)
 if opts.range:
     vmin = min(valuelist)
     vmax = max(valuelist)
+elif opts.zero:
+    rmin = 0.0
+    vmin = min(valuelist)
+    rmax = vmax = max(valuelist)
 else:
     rmin = vmin = min(valuelist)
     rmax = vmax = max(valuelist)
 
-if opts.range:
+if (opts.range or opts.zero):
     nunder = len([ 1 for x in valuelist if x < rmin ])
     nover = len([ 1 for x in valuelist if x > rmax ])
 if opts.debug:
@@ -241,7 +248,7 @@ if opts.debug:
 
 # Create the bucket list
 newbuckets = create_buckets_new(valuelist, opts.nbuckets, rmin, rmax)
-if opts.range:
+if (opts.range or opts.zero):
     addoverflowbuckets(newbuckets, rmin, vmax)
 
 for nbucket in xrange(len(newbuckets)):
@@ -258,7 +265,7 @@ if opts.statistics:
     print "-" * (termwidth - 1)
     print " %-26s: %i" % ("Number of values", len(valuelist))
     print " %-26s: %i" % ("Number of rejected lines", nbadlines)
-    if opts.range:
+    if (opts.range or opts.zero):
         print " %-26s: %i" % ("Number of overflow values", nover)
         print " %-26s: %i" % ("Number of underflow values", nunder)
     print " %-26s: %f" % ("Min value", valuelist[0])
