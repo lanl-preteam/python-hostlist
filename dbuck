@@ -146,6 +146,26 @@ def create_buckets_new(valuelist, num, vmin, vmax):
     blist[-1]['ub'] = vmax
     return blist
 
+def parse_range(rstr):
+    rlist = rstr.split("-")
+    dprint("list representation of range argument: %s" % str(rlist))
+    try:
+        while True:
+            rlist[rlist.index('')+1] = '-' + rlist[rlist.index('')+1]
+            rlist.remove('')
+            dprint("processed one \"-\" character in range argument")
+    except ValueError:
+        pass
+    dprint("list representation of range argument: %s" % str(rlist))
+    try:
+        rlist = map(float, rlist)
+    except ValueError:
+        print "Error: invalid range specified"
+        sys.exit(1)
+    if rlist[0] >= rlist[1]:
+        print "Error: inverted or null range"
+        sys.exit(1)
+    return rlist
 
 ##
 ### Main program
@@ -200,11 +220,10 @@ if (opts.show_overflow and not (opts.range or opts.zero)):
     print "Warning: --show-overflow only has meaning with --range or --zero"
 
 if opts.range:
-    try:
-        (rmin, rmax) = map(float, opts.range.split("-"))
-    except ValueError:
-        print "Error: invalid range specified"
-        sys.exit(1)
+    if opts.zero:
+        print "Warning: ignoring --zero because of --range use"
+        opts.zero = False
+    (rmin, rmax) = parse_range(opts.range)
 
 termwidth = gettermwidth()
 dprint("termwidth: %i" % termwidth)
