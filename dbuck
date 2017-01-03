@@ -29,6 +29,10 @@ import math
 from pprint import pprint
 from hostlist import collect_hostlist
 
+def dprint(dstr):
+    if opts.debug:
+        print("Debug: %s" % dstr)
+
 def gettermwidth():
     try:
         cols = int(commands.getoutput("/bin/stty -F /dev/tty size").split()[1])
@@ -153,6 +157,9 @@ def create_buckets_new(valuelist, num, vmin, vmax):
 ##        
 
 optp = optparse.OptionParser(usage="usage: %prog [options] < DATA")
+optp.add_option("-b", "--bars",
+                action="store_true", default=False,
+                help="draw histogram style bars instead of list of keys")
 optp.add_option("-r", "--range",
                 action="store", type="string", metavar="LOW-HI",
                 help="explicitly specify a value range")
@@ -306,6 +313,17 @@ if opts.verbose:
                                            " " * (ncharnodecnt - 3))
     print "-" * termwidth
 
+# To later be able to scale the bars find the largest bucket
+if opts.bars:
+    maxbucketsize = 0
+    for bucket in newbuckets:
+        maxbucketsize = max(maxbucketsize, len(bucket['nodelist']))
+    dprint("maxbucket %i" % maxbucketsize)
+    barscale = max(1.0,
+                   maxbucketsize / (termwidth - (ncharvalue * 2 + ncharnodecnt + 5.0)))
+    dprint("available space for bars %i" % (termwidth - (ncharvalue * 2 + ncharnodecnt + 5)))
+    dprint("barscale %f" % barscale)
+
 # Main output print
 lower = valuelist[0]
 for bucket in newbuckets:
@@ -314,9 +332,18 @@ for bucket in newbuckets:
     pad2 = (ncharvalue - len(str("%.2f" % bucket['ub']))) * " "
     pad3 = (ncharnodecnt - len(str(len(bucket['nodelist'])))) * " "
 
-    nodeliststr = collect_hostlist(bucket['nodelist'])
-    if opts.chop_long_lines and len(nodeliststr) > (termwidth - (ncharvalue * 2 + ncharnodecnt + 5)):
+    if opts.bars:
+        nodeliststr = "#" * len(bucket['nodelist'])
+    else:
+        nodeliststr = collect_hostlist(bucket['nodelist'])
+
+    if (opts.chop_long_lines and
+        (not opts.bars) and
+        len(nodeliststr) > (termwidth - (ncharvalue * 2 + ncharnodecnt + 5))):
         nodeliststr = nodeliststr[:(termwidth - (ncharvalue * 2 + ncharnodecnt + 5 + 3))] + "..."
+    if opts.chop_long_lines and opts.bars:
+        dprint("scaling down to %i chars" % (int(len(nodeliststr)/barscale)))
+        nodeliststr = nodeliststr[:int(len(nodeliststr)/barscale)]
 
     if 'special' in bucket:
         if opts.show_overflow:
