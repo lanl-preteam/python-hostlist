@@ -74,7 +74,7 @@ def refine_data(rawlist):
             tmp = rawlist[i].replace(char, " ")
             rawlist[i] = tmp
 
-    if not opts.key:
+    if opts.key == None:
         if len(rawlist) < 3:
             print "Error: not enough data for auto-detect, please use -k"
             sys.exit(1)
@@ -88,6 +88,14 @@ def refine_data(rawlist):
                 key.append(0)
                 continue
             # The first column that can be converted to a float will be our candidate
+            if opts.anonymous:
+                try:
+                    tmp = float(sline[0])
+                except ValueError:
+                    pass
+                if tmp != None:
+                    key.append(0)
+                    continue
             for i in [ x + 1 for x in range(len(sline[1:])) ]:
                 tmp = None
                 try:
@@ -114,7 +122,8 @@ def refine_data(rawlist):
                 break
         
         # No winner found (or winner was 'bad line')
-        if not opts.key or (opts.key == 0):
+        if opts.key == None or ((opts.key == 0) and
+                                not opts.anonymous):
             print "Error: Unable to auto-detect KEY from data"
             sys.exit(1)
 
@@ -128,6 +137,8 @@ def refine_data(rawlist):
         except (ValueError, IndexError):
             pass
         if tmp != None:
+            if opts.anonymous:
+                sline[0] = "na"
             cleandata.append([ sline[0].strip(":"), tmp ])
         else:
             nreject += 1
@@ -178,6 +189,9 @@ def parse_range(rstr):
 ##        
 
 optp = optparse.OptionParser(usage="usage: %prog [options] < DATA")
+optp.add_option("-a", "--anonymous",
+                action="store_true", default=False,
+                help="anonymous data, only handle data (implies --bars and allows -k0)")
 optp.add_option("-b", "--bars",
                 action="store_true", default=False,
                 help="draw histogram style bars instead of list of keys")
@@ -240,6 +254,12 @@ if opts.range:
 if opts.color == 'auto':
     if not sys.stdout.isatty():
         opts.color='never'
+
+if opts.anonymous:
+    opts.bars = True
+elif opts.key == 0:
+    print "Error: -k0 only possible with --anonymous"
+    sys.exit(1)
 
 termwidth = gettermwidth()
 dprint("termwidth: %i" % termwidth)
@@ -328,6 +348,7 @@ for (node, value) in data:
 ncharvalue = len(str("%.2f" % valuelist[-1]))
 ncharnodecnt = max(len(str(max( [ len(bucket['nodelist']) for bucket in newbuckets ] ))), 3)
 
+#pprint(["final newbuckets", newbuckets])
 dprint("value pad: %i" % ncharvalue)
 dprint("node count pad: %i" % ncharnodecnt)
 
