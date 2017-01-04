@@ -22,6 +22,12 @@ Print help message
 .B -b, --bars
 Draw histogram style bars instead of list of keys. Can be scaled down to fit terminal with -S,--chop-long-lines
 .TP
+.BI "--color=" WHEN
+Allow colors in output; WHEN can be 'always', 'never', 'auto' (default: 'auto')
+.TP
+.BI "--highlight=" HOSTLIST ",--highlight-hostlist=" HOSTLIST
+Highlight the specified HOSTLIST in the output table using colors. Combining with --chop-long-lines will show only data that matches the highlight.
+.TP
 .BI "-r " LOW-HI ", --range=" LOW-HI
 Explicitly specify a range from minimum value of lowest bucket to maximum value of highest bucket (default: minimum value to maximum value seen in input data). Both LOW and HI can be negative numbers (integers or decimal).
 .TP
