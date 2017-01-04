@@ -19,8 +19,11 @@ Data is assumed to be N lines of data one for each host/entity. By default dbuck
 .B -h, --help
 Print help message
 .TP
+.B -a, --anonymous
+Anonymous data, only handle data (implies --bars and allows -k to be any value including zero).
+.TP
 .B -b, --bars
-Draw histogram style bars instead of list of keys. Can be scaled down to fit terminal with -S,--chop-long-lines
+Draw histogram style bars instead of list of keys. Can be scaled down to fit terminal with -S,--chop-long-lines.
 .TP
 .BI "--color=" WHEN
 Allow colors in output; WHEN can be 'always', 'never', 'auto' (default: 'auto')
