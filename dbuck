@@ -28,6 +28,7 @@ import commands
 import math
 from pprint import pprint
 from hostlist import collect_hostlist
+from hostlist import expand_hostlist
 
 def dprint(dstr):
     if opts.debug:
@@ -39,6 +40,11 @@ def gettermwidth():
     except:
         cols = 80
     return cols
+
+def redboldstr(instr):
+    if opts.color == 'never':
+        return instr
+    return "\033[1m\033[31m%s\033[0m" % instr
 
 ## Statistical functions
 
@@ -175,6 +181,12 @@ optp = optparse.OptionParser(usage="usage: %prog [options] < DATA")
 optp.add_option("-b", "--bars",
                 action="store_true", default=False,
                 help="draw histogram style bars instead of list of keys")
+optp.add_option("--color",
+                action="store", type="string", metavar="WHEN", default="auto",
+                help="allow colors in output; WHEN can be 'always', 'never', 'auto' (default: 'auto')")
+optp.add_option("--highlight", "--highlight-hostlist",
+                action="store", type="string", metavar="HOSTLIST",
+                help="highlight the specified HOSTLIST in the output table")
 optp.add_option("-r", "--range",
                 action="store", type="string", metavar="LOW-HI",
                 help="explicitly specify a value range")
@@ -224,6 +236,10 @@ if opts.range:
         print "Warning: ignoring --zero because of --range use"
         opts.zero = False
     (rmin, rmax) = parse_range(opts.range)
+
+if opts.color == 'auto':
+    if not sys.stdout.isatty():
+        opts.color='never'
 
 termwidth = gettermwidth()
 dprint("termwidth: %i" % termwidth)
@@ -322,6 +338,9 @@ if opts.verbose:
                                            " " * (ncharnodecnt - 3))
     print "-" * termwidth
 
+if opts.highlight:
+    highlight_set = set(expand_hostlist(opts.highlight))
+
 # To later be able to scale the bars find the largest bucket
 if opts.bars:
     maxbucketsize = 0
@@ -341,13 +360,25 @@ for bucket in newbuckets:
     pad2 = (ncharvalue - len(str("%.2f" % bucket['ub']))) * " "
     pad3 = (ncharnodecnt - len(str(len(bucket['nodelist'])))) * " "
 
+# Three output modes for keys: bars, highlight and normal
     if opts.bars:
         nodeliststr = "#" * len(bucket['nodelist'])
+    elif opts.highlight:
+        nodeliststr = redboldstr(collect_hostlist(highlight_set & set(bucket['nodelist'])))
+        if (highlight_set & set(bucket['nodelist']) and
+            set(bucket['nodelist']) - highlight_set):
+            nodeliststr += ","
+        if set(bucket['nodelist']) - highlight_set:
+# Since doing normal -S with colors is hard, for now just remove non-highlight
+            if not opts.chop_long_lines:
+                nodeliststr += collect_hostlist(set(bucket['nodelist']) - highlight_set)
+            else:
+                nodeliststr += "..."
     else:
         nodeliststr = collect_hostlist(bucket['nodelist'])
 
     if (opts.chop_long_lines and
-        (not opts.bars) and
+        (not (opts.bars or opts.highlight)) and
         len(nodeliststr) > (termwidth - (ncharvalue * 2 + ncharnodecnt + 5))):
         nodeliststr = nodeliststr[:(termwidth - (ncharvalue * 2 + ncharnodecnt + 5 + 3))] + "..."
     if opts.chop_long_lines and opts.bars:
