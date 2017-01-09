@@ -28,6 +28,9 @@ Draw histogram style bars instead of list of keys. Can be scaled down to fit ter
 .BI "--color=" WHEN
 Allow colors in output; WHEN can be 'always', 'never', 'auto' (default: 'auto')
 .TP
+.B --no-cache
+Do not save a copy of the data in a cache file. By default dbuck will save data in a per user per session cache file for later use with --previous.
+.TP
 .BI "--highlight=" HOSTLIST ",--highlight-hostlist=" HOSTLIST
 Highlight the specified HOSTLIST in the output table using colors. Combining with --chop-long-lines will show only data that matches the highlight.
 .TP
@@ -45,6 +48,9 @@ Include two extra buckets for overflow and underflow. This option is only valid 
 .TP
 .BI "-n " NBUCKETS ", --nbuckets=" NBUCKETS
 Number of buckets to use (default: 5)
+.TP
+.B -p, --previous
+Read data from cache file instead of from stdin. Cache files are saved by default per user per session unless disabled by --no-cache.
 .TP
 .B -s, --statistics
 Output a statistical summary (min, max, mean, sum, ...)
