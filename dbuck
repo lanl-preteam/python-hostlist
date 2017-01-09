@@ -26,6 +26,9 @@ import sys
 import optparse
 import commands
 import math
+import os
+import stat
+import time
 from pprint import pprint
 from hostlist import collect_hostlist
 from hostlist import expand_hostlist
@@ -45,6 +48,56 @@ def redboldstr(instr):
     if opts.color == 'never':
         return instr
     return "\033[1m\033[31m%s\033[0m" % instr
+
+# Opens cachefile in read or write mode. Do lots of checks for write case.
+def opencachefile(fmode):
+    tmpdir = "/tmp"
+    if "TMPDIR" in os.environ:
+        tmpdir = os.environ["TMPDIR"]
+    tmpdir += "/dbuck-%i" % os.geteuid()
+    dprint("Trying to open cachefile in dir %s in mode %s" % (tmpdir, fmode))
+    if fmode == "w":
+        oldmask = os.umask(022)
+        if not os.path.isdir(tmpdir):
+            if opts.verbose:
+                print "Info: creating cache directory: %s" % tmpdir
+            os.mkdir(tmpdir)
+        statstrct = os.stat(tmpdir)
+        if ((stat.S_IWOTH & statstrct.st_mode) or
+            (stat.S_IWGRP & statstrct.st_mode) or
+            (statstrct.st_uid != os.geteuid())):
+            print "Error: incorrect permissions on tmpdir: %s" % tmpdir
+            raise BaseException
+    f = open(tmpdir + "/cache-%i" % os.getsid(os.getpid()), fmode)
+    if fmode == "w":
+        os.umask(oldmask)
+    return f
+
+def readdata(cachefile):
+    if opts.previous:
+        if opts.verbose:
+            cachestat = os.stat(cachefile.name)
+            print "Info: reading data from cachefile created %s" % time.ctime(cachestat.st_mtime)
+        try:
+            rawdata = cachefile.readlines()
+        except:
+            print "Error: unable to read from cachefile"
+            sys.exit(1)
+    else:
+        try:
+            rawdata = sys.stdin.readlines()
+        except KeyboardInterrupt:
+            if opts.verbose:
+                print "Info: Caught keyboard interrupt, exiting..."
+            sys.exit(1)
+        if not opts.no_cache:
+            try:
+                cachefile.writelines(rawdata)
+            except:
+                print "Error: unable to write to cachefile"
+
+    return rawdata
+
 
 ## Statistical functions
 
@@ -198,6 +251,9 @@ optp.add_option("-b", "--bars",
 optp.add_option("--color",
                 action="store", type="string", metavar="WHEN", default="auto",
                 help="allow colors in output; WHEN can be 'always', 'never', 'auto' (default: 'auto')")
+optp.add_option("--no-cache",
+                action="store_true", default=False,
+                help="do not save a cached copy of the data for later use (see --previous)")
 optp.add_option("--highlight", "--highlight-hostlist",
                 action="store", type="string", metavar="HOSTLIST",
                 help="highlight the specified HOSTLIST in the output table")
@@ -216,6 +272,9 @@ optp.add_option("-k", "--key",
 optp.add_option("-n", "--nbuckets",
                 action="store", type="int", default=5,
                 help="number of buckets to use (default: %default)")
+optp.add_option("-p", "--previous",
+                action="store_true", default=False,
+                help="read cached data from previous run instead of normal stdin")
 optp.add_option("-s", "--statistics",
                 action="store_true", default=False,
                 help="include a statistical summary")
@@ -261,15 +320,25 @@ elif opts.key == 0:
     print "Error: -k0 only possible with --anonymous"
     sys.exit(1)
 
+if opts.previous:
+    try:
+        cachefile = opencachefile("r")
+    except:
+        print "Error: unable to open cachefile"
+        sys.exit(1)
+elif not opts.no_cache:
+    try:
+        cachefile = opencachefile("w")
+    except:
+        print "Error: unable to open cachefile"
+        sys.exit(1)
+else:
+    cachefile = None
+
+rawdata = readdata(cachefile)
+
 termwidth = gettermwidth()
 dprint("termwidth: %i" % termwidth)
-
-try:
-    rawdata = sys.stdin.readlines()
-except KeyboardInterrupt:
-    if opts.verbose:
-        print "Info: Caught keyboard interrupt, exiting..."
-    sys.exit(1)
 
 # do list of str -> list of [ hostname, value ] and discard bad lines
 if (len(rawdata) == 0):
