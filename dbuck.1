@@ -5,14 +5,19 @@ dbuck \- format output from pdsh command or similar
 
 .SH SYNOPSIS
 .B dbuck
-.RI [ OPTION "]... "
+.RI [ OPTIONS ]
+.BI < DATA
+.br
+.B dbuck
+.RI [ OPTIONS ]
+.B --previous
 
 .SH DESCRIPTION
-Reads data from stdin and outputs a human readable report on stdout.
+Reads data from stdin (or cache file if --previous is given) and outputs a human readable report on stdout.
 
 dbuck is similar to dshbak but is targeted at numerical data such as temperatures, power consumption, loadavg etc. Output is a bucket sorted table, a sort of histogram.
 
-Data is assumed to be N lines of data one for each host/entity. By default dbuck will autodetect the column to use (looking at the last three lines) and sort everything into five (linear) buckets. Any line missing numerical data at the targeted column will be ignored.
+Data is assumed to be N lines of column wise space separated integers or decimal numbers. By default dbuck will autodetect the column to use (picking the first valid one) and sort everything into five (linear) buckets. Any line missing numerical data at the targeted column will be ignored. A complete copy of the data will also be saved for future use (see --previous).
 
 .SH OPTIONS
 .TP
@@ -20,7 +25,7 @@ Data is assumed to be N lines of data one for each host/entity. By default dbuck
 Print help message
 .TP
 .B -a, --anonymous
-Anonymous data, only handle data (implies --bars and allows -k to be any value including zero).
+Anonymous data, only handle data (implies --bars and allows -k to be any value including zero). See example 2 below.
 .TP
 .B -b, --bars
 Draw histogram style bars instead of list of keys. Can be scaled down to fit terminal with -S,--chop-long-lines.
@@ -44,7 +49,7 @@ Use data at position KEY (default: auto)
 Make dbuck generate buckets from zero (0.0) instead of lowest value seen in indata.
 .TP
 .B -o, --show-overflow
-Include two extra buckets for overflow and underflow. This option is only valid with a custom range (-r, --range). Default behavior is to count the over- and underflows and present them in the statistical summary.
+Include two extra buckets for overflow and underflow. This option is only valid with a custom range (--range or --zero). Default behavior is to otherwise only count the over- and underflows and present them in the statistical summary.
 .TP
 .BI "-n " NBUCKETS ", --nbuckets=" NBUCKETS
 Number of buckets to use (default: 5)
@@ -67,7 +72,7 @@ Be verbose
 .B --debug
 Output debugging information
 
-.SH EXAMPLE
+.SH EXAMPLE 1
 $ cat test/dbuck.testdata
  n1: 139 W
  n11: 128 W
@@ -95,7 +100,28 @@ $ cat test/dbuck.testdata | ./dbuck -s -n 4 --verbose
  138.50-162.00:   2  n[1,3]
  162.00-185.50:   1  n6
  185.50-209.00:   3  n[2,4-5]
-
+.SH EXAMPLE 2
+Process resident size and total vm size from ps using the --anonymous option. Unlike the example above there's no hostname associated with each data point so this implies --bars.
+.TP
+$ ps -eo rss,vsize | ./dbuck --anonymous --chop-long-lines --verbose
+ Info: auto-detect unanimously selected key: 0
+ Info: rejected line: "RSS    VSZ"
+       LOW-       HI: CNT  HOSTLIST
+ --------------------------------------------------------------
+      0.00-116425.60: 271  ####################################
+ 116425.60-232851.20:  16  ##
+ 232851.20-349276.80:   3  
+ 349276.80-465702.40:   3  
+ 465702.40-582128.00:   1  
+.TP
+Allowing dbuck to automatically find data, it picked up the RSS value (selected key: 0). Now we'll specify "-k 1" to select the vsize data in column 1.
+.TP
+$ ps -eo rss,vsize | ./dbuck --anonymous --chop-long-lines -k 1
+         0.00- 53763877.60: 293  ##############################
+  53763877.60-107527755.20:   0  
+ 107527755.20-161291632.80:   0  
+ 161291632.80-215055510.40:   0  
+ 215055510.40-268819388.00:   1 
 .SH AUTHOR
 Written by Peter Kjellström <cap@nsc.liu.se>.
 
