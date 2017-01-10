@@ -63,13 +63,11 @@ def redboldstr(instr):
 
 # Opens cache file in read or write mode. Do lots of checks for write case.
 def opencachefile(fmode):
-    tmpdir = "/tmp"
-    if "TMPDIR" in os.environ:
-        tmpdir = os.environ["TMPDIR"]
-    tmpdir += "/dbuck-%i" % os.geteuid()
+    tmpdir = os.path.join(os.environ.get("TMPDIR", "/tmp"),
+                           "dbuck-%i" % os.geteuid())
     dprint("Trying to open cache file in dir %s in mode %s" % (tmpdir, fmode))
     if fmode == "w":
-        oldmask = os.umask(022)
+        oldmask = os.umask(077)
         if not os.path.isdir(tmpdir):
             iprint("creating cache directory: %s" % tmpdir)
             os.mkdir(tmpdir)
