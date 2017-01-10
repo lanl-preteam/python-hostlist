@@ -214,7 +214,7 @@ def create_buckets_new(valuelist, num, vmin, vmax):
 
 def parse_range(rstr):
     rlist = rstr.split("-")
-    dprint("list representation of range argument: %s" % str(rlist))
+    dprint("list representation of raw range argument: %s" % str(rlist))
     try:
         while True:
             rlist[rlist.index('')+1] = '-' + rlist[rlist.index('')+1]
@@ -222,7 +222,7 @@ def parse_range(rstr):
             dprint("processed one \"-\" character in range argument")
     except ValueError:
         pass
-    dprint("list representation of range argument: %s" % str(rlist))
+    dprint("list representation of processed range argument: %s" % str(rlist))
     try:
         rlist = map(float, rlist)
     except ValueError:
@@ -358,7 +358,7 @@ else:
 if (opts.range or opts.zero):
     nunder = len([ 1 for x in valuelist if x < rmin ])
     nover = len([ 1 for x in valuelist if x > rmax ])
-dprint("cleaned up data: %s" % str(data))
+#dprint("cleaned up data: %s" % str(data))
 
 # Create the bucket list
 newbuckets = create_buckets_new(valuelist, opts.nbuckets, rmin, rmax)
@@ -391,7 +391,8 @@ if opts.statistics:
     print
 
 
-#pprint(["final newbuckets", newbuckets])
+if opts.debug:
+    pprint(["final newbuckets", newbuckets])
 
 # Populate the buckets with data
 currentbucket = 0
@@ -399,23 +400,33 @@ for (node, value) in data:
     while ((newbuckets[currentbucket]['ub'] < value) or
            (value == rmin and currentbucket == 0 and 'special' in newbuckets[0])):
         currentbucket += 1
-        dprint("bumping bucket number...")
-    dprint("%i: adding %s %.2f" % (currentbucket, node, value))
+        if opts.debug:
+            print
+        dprint("filling next bucket")
+    if opts.debug:
+        sys.stdout.write(".")
     newbuckets[currentbucket]['nodelist'].append(node)
+if opts.debug:
+    print
 
 # Compute number of characters needed for printing values and number of nodes
-ncharvalue = len(str("%.2f" % valuelist[-1]))
+ncharvalue = len(str("%.2f" % max(valuelist[-1], rmax)))
 ncharnodecnt = max(len(str(max( [ len(bucket['nodelist']) for bucket in newbuckets ] ))), 3)
 
+# debug print of full data structure with data
 #pprint(["final newbuckets", newbuckets])
+
 dprint("value pad: %i" % ncharvalue)
 dprint("node count pad: %i" % ncharnodecnt)
 
 # Print out a header if --verbose
 if opts.verbose:
-    print "%sLOW-%sHI: %sCNT  HOSTLIST" % (" " * (ncharvalue - 3),
-                                           " " * (ncharvalue - 2),
-                                           " " * (ncharnodecnt - 3))
+    header = "%sLOW-%sHI: %sCNT" % (" " * (ncharvalue - 3),
+                                    " " * (ncharvalue - 2),
+                                    " " * (ncharnodecnt - 3))
+    if not opts.bars:
+        header += "  HOSTLIST"
+    print header
     print "-" * termwidth
 
 if opts.highlight_hostlist:
@@ -425,8 +436,10 @@ if opts.highlight_hostlist:
 if opts.bars:
     maxbucketsize = 0
     for bucket in newbuckets:
+        if not opts.show_overflow and 'special' in bucket:
+            continue
         maxbucketsize = max(maxbucketsize, len(bucket['nodelist']))
-    dprint("maxbucket %i" % maxbucketsize)
+    dprint("largest number of values in any bucket: %i" % maxbucketsize)
     barscale = max(1.0,
                    maxbucketsize / (termwidth - (ncharvalue * 2 + ncharnodecnt + 5.0)))
     dprint("available space for bars %i" % (termwidth - (ncharvalue * 2 + ncharnodecnt + 5)))
@@ -462,7 +475,6 @@ for bucket in newbuckets:
         len(nodeliststr) > (termwidth - (ncharvalue * 2 + ncharnodecnt + 5))):
         nodeliststr = nodeliststr[:(termwidth - (ncharvalue * 2 + ncharnodecnt + 5 + 3))] + "..."
     if opts.chop_long_lines and opts.bars:
-        dprint("scaling down to %i chars" % (int(len(nodeliststr)/barscale)))
         nodeliststr = nodeliststr[:int(len(nodeliststr)/barscale)]
 
     if 'special' in bucket:
