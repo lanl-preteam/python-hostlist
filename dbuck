@@ -65,11 +65,13 @@ def redboldstr(instr):
 def opencachefile(fmode):
     tmpdir = os.path.join(os.environ.get("TMPDIR", "/tmp"),
                            "dbuck-%i" % os.geteuid())
-    dprint("Trying to open cache file in dir %s in mode %s" % (tmpdir, fmode))
+    dprint("trying to open cache file in dir %s in mode %s" % (tmpdir, fmode))
     if fmode == "w":
         oldmask = os.umask(077)
         if not os.path.isdir(tmpdir):
             iprint("creating cache directory: %s" % tmpdir)
+            wprint("this version automatically saves a copy of the last data")
+            wprint("for more information see man page (--previous, --no-cache)")
             os.mkdir(tmpdir)
         statstrct = os.stat(tmpdir)
         if ((stat.S_IWOTH & statstrct.st_mode) or
@@ -249,7 +251,7 @@ optp.add_option("--color",
                 help="allow colors in output; WHEN can be 'always', 'never', 'auto' (default: 'auto')")
 optp.add_option("--no-cache",
                 action="store_true", default=False,
-                help="do not save a cached copy of the data for later use (see --previous)")
+                help="do not save a cached copy of the data for later use (see also --previous)")
 optp.add_option("--highlight-hostlist",
                 action="store", type="string", metavar="HOSTLIST",
                 help="highlight the specified HOSTLIST in the output table")
