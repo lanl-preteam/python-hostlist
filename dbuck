@@ -57,7 +57,8 @@ def gettermwidth():
     return cols
 
 def redboldstr(instr):
-    if opts.color == 'never':
+    if (opts.color == 'never' or
+        instr == ""):
         return instr
     return "\033[1m\033[31m%s\033[0m" % instr
 
@@ -455,29 +456,52 @@ for bucket in newbuckets:
     pad2 = (ncharvalue - len(str("%.2f" % bucket['ub']))) * " "
     pad3 = (ncharnodecnt - len(str(len(bucket['nodelist'])))) * " "
 
-# Three output modes for keys: bars, highlight and normal
+    availablespace = termwidth - (ncharvalue * 2 + ncharnodecnt + 5)
+    dprint("available space for nodelist: %i" % availablespace)
+    # Three output modes for keys: bars, highlight and normal
     if opts.bars:
-        nodeliststr = "#" * len(bucket['nodelist'])
-    elif opts.highlight_hostlist:
-        nodeliststr = redboldstr(collect_hostlist(highlight_set & set(bucket['nodelist'])))
-        if (highlight_set & set(bucket['nodelist']) and
-            set(bucket['nodelist']) - highlight_set):
-            nodeliststr += ","
-        if set(bucket['nodelist']) - highlight_set:
-# Since doing normal -S with colors is hard, for now just remove non-highlight
-            if not opts.chop_long_lines:
-                nodeliststr += collect_hostlist(set(bucket['nodelist']) - highlight_set)
+        if opts.highlight_hostlist:
+            hnum = len(highlight_set & set(bucket['nodelist']))
+            nnum = len(set(bucket['nodelist']) - highlight_set)
+            # Always show highlighted data even if it rounds down to zero characters
+            if ((hnum > 0) and (int(hnum/barscale) == 0)):
+                roundup = 1
             else:
-                nodeliststr += "..."
+                roundup = 0
+            if opts.chop_long_lines:
+                nodeliststr = redboldstr("#" * (int(hnum/barscale) + roundup)) + "#" * int(nnum/barscale)
+            else:
+                nodeliststr = redboldstr("#" * hnum) + "#" * nnum
+        else:
+            nodeliststr = "#" * len(bucket['nodelist'])
+            if opts.chop_long_lines:
+                nodeliststr = nodeliststr[:int(len(nodeliststr)/barscale)]
+    elif opts.highlight_hostlist:
+        hnodeliststr = collect_hostlist(highlight_set & set(bucket['nodelist']))
+        nnodeliststr = collect_hostlist(set(bucket['nodelist']) - highlight_set)
+        dprint("len(hnodeliststr) is: %i" % len(hnodeliststr))
+        dprint("len(nnodeliststr) is: %i" % len(nnodeliststr))
+        if hnodeliststr and nnodeliststr:
+            sep = ","
+            availablespace -= 1
+        else:
+            sep = ""
+        dprint("sep is %s" % str(not (sep == "")))
+        if (not opts.chop_long_lines or
+            len(hnodeliststr + nnodeliststr) <= availablespace):
+            nodeliststr = redboldstr(hnodeliststr) + sep + nnodeliststr
+        elif ((len(hnodeliststr) + 3) <= availablespace):
+            availablespace = availablespace + len(sep) - len(hnodeliststr)
+            nodeliststr = redboldstr(hnodeliststr)
+            nnodeliststr = sep + nnodeliststr
+            nodeliststr += nnodeliststr[:(availablespace - 3)] + "..."
+        else:
+            availablespace += len(sep)
+            nodeliststr = redboldstr(hnodeliststr[:(availablespace - 3)] + "...")
     else:
         nodeliststr = collect_hostlist(bucket['nodelist'])
-
-    if (opts.chop_long_lines and
-        (not (opts.bars or opts.highlight_hostlist)) and
-        len(nodeliststr) > (termwidth - (ncharvalue * 2 + ncharnodecnt + 5))):
-        nodeliststr = nodeliststr[:(termwidth - (ncharvalue * 2 + ncharnodecnt + 5 + 3))] + "..."
-    if opts.chop_long_lines and opts.bars:
-        nodeliststr = nodeliststr[:int(len(nodeliststr)/barscale)]
+        if len(nodeliststr) > availablespace:
+            nodeliststr = nodeliststr[:(availablespace - 3)] + "..."
 
     if 'special' in bucket:
         if opts.show_overflow:
