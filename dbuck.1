@@ -43,7 +43,7 @@ Highlight the specified HOSTLIST in the output table using colors.
 Explicitly specify a range from minimum value of lowest bucket to maximum value of highest bucket (default: minimum value to maximum value seen in input data). Both LOW and HI can be negative numbers (integers or decimal).
 .TP
 .BI "-k " KEY ", --key=" KEY
-Use data at position KEY (default: auto)
+Use data at position KEY (default: auto). dbuck counts from 0 but field 0 is normally reserved for index/hostname. This means that in normal mode -k can range from 1 to the number of fields while in anonymous mode (-a/--anonymous) -k can also be 0.
 .TP
 .B -z, --zero
 Make dbuck generate buckets from zero (0.0) instead of lowest value seen in indata.
