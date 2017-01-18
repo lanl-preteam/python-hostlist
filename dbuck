@@ -461,15 +461,19 @@ for bucket in newbuckets:
     # Three output modes for keys: bars, highlight and normal
     if opts.bars:
         if opts.highlight_hostlist:
-            hnum = len(highlight_set & set(bucket['nodelist']))
-            nnum = len(set(bucket['nodelist']) - highlight_set)
+            tnum = len(bucket['nodelist'])
+            hnum = 0
+            for i in highlight_set:
+                hnum += bucket['nodelist'].count(i)
+            nnum = tnum - hnum
             # Always show highlighted data even if it rounds down to zero characters
             if ((hnum > 0) and (int(hnum/barscale) == 0)):
                 roundup = 1
             else:
                 roundup = 0
             if opts.chop_long_lines:
-                nodeliststr = redboldstr("#" * (int(hnum/barscale) + roundup)) + "#" * int(nnum/barscale)
+                nodeliststr = ( redboldstr("#" * (int(hnum/barscale) + roundup)) +
+                                "#" * int(nnum/barscale) )
             else:
                 nodeliststr = redboldstr("#" * hnum) + "#" * nnum
         else:
