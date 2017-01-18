@@ -504,7 +504,8 @@ for bucket in newbuckets:
             nodeliststr = redboldstr(hnodeliststr[:(availablespace - 3)] + "...")
     else:
         nodeliststr = collect_hostlist(bucket['nodelist'])
-        if len(nodeliststr) > availablespace:
+        if (opts.chop_long_lines and
+            len(nodeliststr) > availablespace):
             nodeliststr = nodeliststr[:(availablespace - 3)] + "..."
 
     if 'special' in bucket:
