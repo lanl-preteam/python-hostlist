@@ -225,13 +225,16 @@ def parse_range(rstr):
             dprint("processed one \"-\" character in range argument")
     except ValueError:
         pass
+    except IndexError:
+        eprint("invalid range specified")
     dprint("list representation of processed range argument: %s" % str(rlist))
     try:
         rlist = map(float, rlist)
     except ValueError:
         eprint("invalid range specified")
-    if rlist[0] >= rlist[1]:
-        eprint("inverted or null range")
+    if (len(rlist) != 2 or
+        rlist[0] >= rlist[1]):
+        eprint("inverted, incomplete or null range")
     return rlist
 
 ##
