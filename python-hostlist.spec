@@ -53,6 +53,15 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man1/pshbak.1.gz
 /usr/share/man/man1/dbuck.1.gz
 %changelog
+* Mon Jan 23 2017 Kent Engström <kent@nsc.liu.se> - 1.17-1
+- New features in dbuck by cap@nsc.liu.se:
+- Add option -z, --zero
+- Add option -b, --bars
+- Add option --highligh-hostlist and --color
+- Add option -a, --anonymous
+- Add option -p, --previous and --no-cache
+- Also other fixes and cleanups in dbuck
+
 * Mon May 23 2016 Kent Engström <kent@nsc.liu.se> - 1.16-1
 - Ignore PYTHONPATH et al. in installed scripts
 
