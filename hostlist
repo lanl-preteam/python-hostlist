@@ -133,13 +133,14 @@ if opts.version:
 func_args  = []
 try:
     for a in args:
+        input_string = a
         if a == "-":
-            stdin_hosts = set()
-            for a in sys.stdin.read().split():
-                stdin_hosts |= set(expand_hostlist(a))
-            func_args.append(stdin_hosts)
-        else:
-            func_args.append(set(expand_hostlist(a)))
+            input_string = sys.stdin.read()
+
+        func_args.append(set())
+        for e in input_string.split():
+            func_args[-1] |= set(expand_hostlist(e))
+
 except BadHostlist, e:
     sys.stderr.write("Bad hostlist ``%s'' encountered: %s\n"
                      % ((a,) + e.args))
