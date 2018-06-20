@@ -2,17 +2,6 @@
 
 from distutils.core import setup
 
-# Python 2/3 installation trick from .../Demo/distutils/test2to3
-try:
-    from distutils.command.build_py import build_py_2to3 as build_py
-except ImportError:
-    from distutils.command.build_py import build_py
-
-try:
-    from distutils.command.build_scripts import build_scripts_2to3 as build_scripts
-except ImportError:
-    from distutils.command.build_scripts import build_scripts
-
 # Version
 VERSION = "#VERSION#"
 if "#" in VERSION:
@@ -44,7 +33,4 @@ setup(name         = "python-hostlist",
                                           "hostgrep.1",
                                           "pshbak.1",
                                           "dbuck.1"])],
-      cmdclass     = {'build_py':build_py,
-                      'build_scripts':build_scripts,
-                      }
       )

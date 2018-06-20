@@ -3,6 +3,8 @@
 #
 # Hostlist utility
 
+from __future__ import print_function
+
 __version__ = "#VERSION#"
 
 # Copyright (C) 2008 Kent Engström <kent@nsc.liu.se>,
@@ -126,8 +128,7 @@ op.add_option("--version",
 (opts, args) = op.parse_args()
 
 if opts.version:
-    print "Version %s (library version %s)" % (__version__,
-                                               library_version)
+    print("Version %s (library version %s)" % (__version__, library_version))
     sys.exit()
 
 func_args  = []
@@ -141,7 +142,7 @@ try:
         for e in input_string.split():
             func_args[-1] |= set(expand_hostlist(e))
 
-except BadHostlist, e:
+except BadHostlist as e:
     sys.stderr.write("Bad hostlist ``%s'' encountered: %s\n"
                      % ((a,) + e.args))
     sys.exit(os.EX_DATAERR)
@@ -189,7 +190,7 @@ elif opts.append_slurm_tasks or opts.repeat_slurm_tasks:
 
     try:
         task_list = parse_slurm_tasks_per_node(task_list)
-    except BadHostlist, e:
+    except BadHostlist as e:
         sys.stderr.write("Bad task list encountered: %s\n" % e.args)
         sys.exit(os.EX_DATAERR)
     if len(task_list) != len(res):
@@ -200,18 +201,18 @@ elif opts.append_slurm_tasks or opts.repeat_slurm_tasks:
 if opts.quiet:
     pass
 elif opts.count:
-    print len(res)
+    print(len(res))
 elif opts.expand or opts.expand_deprecated:
     if opts.append_slurm_tasks:
-        print opts.separator.join([opts.prepend + host + opts.append + str(tasks)
-                                   for host, tasks in zip(res, task_list)])
+        print(opts.separator.join([opts.prepend + host + opts.append + str(tasks)
+                                   for host, tasks in zip(res, task_list)]))
     elif opts.repeat_slurm_tasks:
         repeated_hosts = flatten([[host]*tasks for host, tasks in zip(res, task_list)])
-        print opts.separator.join([opts.prepend + host + opts.append
-                                   for host in repeated_hosts])
+        print(opts.separator.join([opts.prepend + host + opts.append
+                                   for host in repeated_hosts]))
     else:
-        print opts.separator.join([opts.prepend + host + opts.append
-                                   for host in res])
+        print(opts.separator.join([opts.prepend + host + opts.append
+                                   for host in res]))
 else:
     # --collapse
     if opts.chop and opts.chop > 0:
@@ -225,7 +226,7 @@ else:
                 sys.stdout.write(opts.separator)
             sys.stdout.write(opts.prepend + collect_hostlist(res[i:i+chunk_size]) + opts.append)
             i += chunk_size
-        except BadHostlist, e:
+        except BadHostlist as e:
             sys.stderr.write("Bad hostname encountered: %s\n" % e.args)
             sys.exit(os.EX_DATAERR)
     sys.stdout.write("\n")
