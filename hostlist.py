@@ -3,9 +3,11 @@
 #
 # Hostlist library
 #
-# Copyright (C) 2008 Kent Engström <kent@nsc.liu.se>,
-#                    Thomas Bellman <bellman@nsc.liu.se> and
-#                    Pär Andersson <paran@nsc.liu.se>,
+# Copyright (C) 2008-2018
+#                    Kent Engström <kent@nsc.liu.se>,
+#                    Thomas Bellman <bellman@nsc.liu.se>,
+#                    Pär Lindfors <paran@nsc.liu.se> and
+#                    Torbjörn Lönnemark <ketl@nsc.liu.se>,
 #                    National Supercomputer Centre
 # 
 # This program is free software; you can redistribute it and/or modify
