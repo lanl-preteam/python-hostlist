@@ -53,6 +53,10 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man1/pshbak.1.gz
 /usr/share/man/man1/dbuck.1.gz
 %changelog
+* Thu Jul 21 2018 Kent Engström <kent@nsc.liu.se> - 1.18-1
+- Accept whitespace in hostlists passed as arguments
+- Support both Python 2 and Python 3 natively
+
 * Mon Jan 23 2017 Kent Engström <kent@nsc.liu.se> - 1.17-1
 - New features in dbuck by cap@nsc.liu.se:
 - Add option -z, --zero
