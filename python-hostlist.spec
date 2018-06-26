@@ -2,7 +2,7 @@
 
 Name:           python-hostlist
 Version:        #VERSION#
-Release:        #RELEASE#
+Release:        #RELEASE#%{?dist}
 Summary:        Python module for hostlist handling
 Vendor:         NSC
 
