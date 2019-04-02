@@ -511,17 +511,18 @@ for bucket in newbuckets:
             len(nodeliststr) > availablespace):
             nodeliststr = nodeliststr[:(availablespace - 3)] + "..."
 
+    pad4 = '' if len(bucket['nodelist']) == 0 else '  '
     if 'special' in bucket:
         if opts.show_overflow:
             specpad = " " * max(len("%s%.2f-%s%.2f" %
                                     (pad1, lower ,pad2, bucket['ub'])) - 9,
                                 0)
-            print "%-9s%s: %s%i  %s" % (bucket['special'], specpad,
+            print "%-9s%s: %s%i%s%s" % (bucket['special'], specpad,
                                         pad3, len(bucket['nodelist']),
-                                        nodeliststr)
+                                        pad4, nodeliststr)
     else:
-        print "%s%.2f-%s%.2f: %s%i  %s" % (pad1, lower,
+        print "%s%.2f-%s%.2f: %s%i%s%s" % (pad1, lower,
                                            pad2, bucket['ub'],
                                            pad3, len(bucket['nodelist']),
-                                           nodeliststr)
+                                           pad4, nodeliststr)
     lower = bucket['ub']
