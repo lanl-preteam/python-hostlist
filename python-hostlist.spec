@@ -119,6 +119,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Sep 30 2019 Torbjörn Lönnemark <ketl@nsc.liu.se> - 1.19-1
+- dbuck: Don't print hostlist padding for empty buckets
+
 * Thu Jun 21 2018 Kent Engström <kent@nsc.liu.se> - 1.18-1
 - Accept whitespace in hostlists passed as arguments
 - Support both Python 2 and Python 3 natively
