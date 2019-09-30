@@ -1,6 +1,23 @@
-%{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+%global srcname hostlist
 
-Name:           python-hostlist
+# Enable python2 by default (for now). Change to 'bcond_with' to invert default
+%bcond_without python2
+
+# Doesn't seem to be defined on el6, despite being referenced by other macros
+%if !0%{?__python2:1}
+%define __python2 /usr/bin/python2
+%endif
+
+%if 0%{?el6}
+%define py_shbang_opts -E
+%else
+%define py2_shbang_opts -E
+%endif
+%define py3_shbang_opts -E
+
+%define extra_install_args --prefix /usr
+
+Name:           python-%{srcname}
 Version:        #VERSION#
 Release:        #RELEASE#%{?dist}
 Summary:        Python module for hostlist handling
@@ -10,50 +27,99 @@ Group:          Development/Languages
 License:        GPL2+
 URL:            http://www.nsc.liu.se/~kent/python-hostlist/
 Source0:        http://www.nsc.liu.se/~kent/python-hostlist/%{name}-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch:      noarch
-BuildRequires:  python-devel
 
-%description
+%global _description %{expand:
 The hostlist.py module knows how to expand and collect hostlist
 expressions. The package also includes the 'hostlist' binary which can
 be used to collect/expand hostlists and perform set operations on
-them.
+them.}
+
+%description %_description
+
+%if %{with python2}
+%package -n python2-%{srcname}
+Summary: %{summary}
+BuildRequires: python-devel
+Provides: python-%{srcname} = %{version}-%{release}
+Obsoletes: python-%{srcname} < 1.19-1
+
+%description -n python2-%{srcname} %_description
+%endif
+
+%package -n python3-%{srcname}
+Summary: %{summary}
+BuildRequires: python%{python3_pkgversion}-devel
+
+%description -n python3-%{srcname} %_description
+
 
 %prep
-%setup -q
-
+%autosetup
 
 %build
-%{__python} setup.py build --executable="/usr/bin/python -E"
+%py3_build
+%if %{with python2}
+%if 0%{?py2_build:1}
+%py2_build
+%else
+# el6
+%py_build
+%endif
+%endif
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
-%{__python} setup.py install -O1 --skip-build --prefix /usr --root $RPM_BUILD_ROOT
+%py3_install %{?extra_install_args}
+%if %{with python2}
+%if 0%{?py2_install:1}
+%py2_install %{?extra_install_args}
+%else
+# el6
+%py_install %{?extra_install_args}
+%endif
+%endif
 
- 
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-
-%files
-%defattr(-,root,root,-)
-%doc README
-%doc COPYING
-%doc CHANGES
-%{python_sitelib}/*
+%define _tool_files %{expand:
 /usr/bin/hostlist
 /usr/bin/hostgrep
 /usr/bin/pshbak
 /usr/bin/dbuck
-/usr/share/man/man1/hostlist.1.gz
-/usr/share/man/man1/hostgrep.1.gz
-/usr/share/man/man1/pshbak.1.gz
-/usr/share/man/man1/dbuck.1.gz
+%{_mandir}/man1/hostlist.1.gz
+%{_mandir}/man1/hostgrep.1.gz
+%{_mandir}/man1/pshbak.1.gz
+%{_mandir}/man1/dbuck.1.gz
+}
+
+%if %{with python2}
+%files -n python2-%{srcname}
+%defattr(-,root,root,-)
+%{python_sitelib}/*
+%doc README
+%doc COPYING
+%doc CHANGES
+%_tool_files
+%endif
+
+%files -n python3-%{srcname}
+%defattr(-,root,root,-)
+%{python3_sitelib}/*
+%{python3_sitelib}/__pycache__/*
+%doc README
+%doc COPYING
+%doc CHANGES
+%if !%{with python2}
+%_tool_files
+%endif
+
+
 %changelog
-* Thu Jul 21 2018 Kent Engström <kent@nsc.liu.se> - 1.18-1
+* Thu Jun 21 2018 Kent Engström <kent@nsc.liu.se> - 1.18-1
 - Accept whitespace in hostlists passed as arguments
 - Support both Python 2 and Python 3 natively
 
