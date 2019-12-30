@@ -3,6 +3,8 @@
 #
 # rewrite of dshbak using python-hostlist
 
+from __future__ import print_function
+
 __version__ = "#VERSION#"
 
 # Copyright (C) 2010 Mattias Slabanja <slabanja@chalmers.se>
@@ -68,13 +70,13 @@ def collect(text_dict):
     Return a list of (host set, text) tuples."""
 
     reverse_dict = {}
-    for host, text in text_dict.iteritems():
+    for host, text in text_dict.items():
         if text in reverse_dict:
             reverse_dict[text].add(host)
         else:
             reverse_dict[text] = set((host,))
 
-    return [(host_set, text) for text, host_set in reverse_dict.iteritems()]
+    return [(host_set, text) for text, host_set in reverse_dict.items()]
 
 
 # Colors enabled by default
@@ -95,10 +97,10 @@ def output(host_set_or_str, text, count_hosts=False):
         header = collect_hostlist(host_set_or_str)
         if count_hosts:
             header = "%d: %s" % (len(host_set_or_str),  header)
-    print in_gray(hline)
-    print in_gray(header)
-    print in_gray(hline)
-    print text
+    print(in_gray(hline))
+    print(in_gray(header))
+    print(in_gray(hline))
+    print(text)
 
 
 class Collector:
@@ -209,12 +211,12 @@ class Collector:
                     hosts_text_list = [(collect_hostlist(hs), t) 
                                        for hs, t in collect(text_dict)]
                 else:
-                    hosts_text_list = text_dict.iteritems()
+                    hosts_text_list = text_dict.items()
                 for host, text in sorted(hosts_text_list, key=lambda x:x[0]):
                     lines.append(in_gray(host) + ": " + text)
                     
         self.labels = self._labels
-        self.N_diffs = self._diff_counter.next()-1
+        self.N_diffs = next(self._diff_counter)-1
         self.diffs = self._diffs
         self.text = '\n'.join(lines)
 
@@ -244,7 +246,7 @@ class Collector:
         
     def _push_label_name(self, label=None):
         if label is None:
-            self._labels.append('text%i' % self._label_counter.next())
+            self._labels.append('text%i' % next(self._label_counter))
         else:
             self._labels.append(label)
             
@@ -291,7 +293,7 @@ class Collector:
 
         def push_n(j, n):
             nm_mb.append((False, j, n))
-            di = self._diff_counter.next()
+            di = next(self._diff_counter)
             line_template.append((False, '%%(%i)s' % di))
             diff_idxs.append(di)
         
@@ -354,7 +356,7 @@ class Collector:
                         _, jB, _  = padded_mb[mb_i+1]
                         iA = index[jA+nA-1]+1        
                         iB = index[jB]
-                        diffs[str(dc.next())] = L[iA:iB]
+                        diffs[str(next(dc))] = L[iA:iB]
 
         return line_template, len(diff_idxs)
 
@@ -414,7 +416,7 @@ op.add_option("--version",
 (opts, args) = op.parse_args()
 
 if opts.version:
-    print "Version %s (library version %s)" % (__version__, library_version)
+    print("Version %s (library version %s)" % (__version__, library_version))
     sys.exit()
 
 # Check to see if we should override use of colors (default = yes for tty)
@@ -471,7 +473,7 @@ try:
     elif opts.collect_similar:
 
         collects = []
-        for host, text in text_dict.iteritems():
+        for host, text in text_dict.items():
             picked = False
             for c in collects:
                 picked = c.try_add_text(text, host)
@@ -499,7 +501,7 @@ try:
 
                 lines = [(h, c.render_line(fmt, h)) for h in c.labels]
                 for _, line in sorted(lines, key=lambda x:x[0]):
-                    print line
+                    print(line)
                         
     else:
         # "Normal" mode, just print the output
@@ -507,7 +509,7 @@ try:
         if opts.collect:
             hosts_text_list = collect(text_dict)
         else:
-            hosts_text_list = [(set((n,)), l) for n,l in text_dict.iteritems()]
+            hosts_text_list = [(set((n,)), l) for n,l in text_dict.items()]
 
         # Sort in descending order of the number of hosts
         hosts_text_list.sort(key = lambda x: -len(x[0]))
@@ -517,7 +519,7 @@ try:
 
 except KeyboardInterrupt:
     sys.exit()
-except IOError, e:
+except IOError as e:
     if e.errno == 32:
         # IOError Broken Pipe, ignore this
         sys.exit()
