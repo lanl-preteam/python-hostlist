@@ -351,15 +351,28 @@ def numerically_sorted(l):
 
     return sorted(l, key=numeric_sort_key)
 
-nsk_re = re.compile("([0-9]+)|([^0-9]+)")
+numeric_sort_key_regexp = re.compile("([0-9]+)|([^0-9]+)")
 def numeric_sort_key(x):
-    return [handle_int_nonint(i_ni) for i_ni in nsk_re.findall(x)]
+    """Compose a sorting key to compare strings "numerically":
 
-def handle_int_nonint(int_nonint_tuple):
-    if int_nonint_tuple[0]:
-        return int(int_nonint_tuple[0])
-    else:
-        return int_nonint_tuple[1]
+    We split numerical (integer) and non-numerical parts into a list,
+    making sure that the numerical parts are converted to Python ints,
+    and then sort on the lists. Thus, if we sort x10y and x9z8, we will
+    compare ["x", 10, "y"] with ["x", 9, "x", "8"] and return x9z8
+    before x10y".
+
+    Python 3 complication: We cannot compare int and str, so while we can
+    compare x10y and x9z8, we cannot compare x10y and 9z8. Kludge: insert
+    a blank string first if the list would otherwise start with an integer.
+    This will give the same ordering as before, as integers seem to compare
+    smaller than strings in Python 2.
+    """
+
+    keylist = [int(i_ni[0]) if i_ni[0] else i_ni[1]
+               for i_ni in numeric_sort_key_regexp.findall(x)]
+    if keylist and isinstance(keylist[0], int):
+        keylist.insert(0, "")
+    return keylist
 
 # Parse SLURM_TASKS_PER_NODE into a list of task numbers
 #

@@ -56,6 +56,8 @@ class TestExpand1(unittest.TestCase):
         self.expand_eq("n[3-8,1-5]", ["n3", "n4", "n5", "n6", "n7", "n8", "n1", "n2"])
         self.expand_sort_eq("n[3-8,1-5]", ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"])
 
+        self.expand_sort_eq("[3-4]n,n[1-2]", ["3n", "4n", "n1", "n2"])
+
         self.expand_eq("", [])
 
         self.expand_bad("n[]")
@@ -118,6 +120,7 @@ class TestExpand1(unittest.TestCase):
 
         self.collect_eq("x,y[10-12],z", ["z","y10","y12", "x", "y11"])
 
-    
+        self.collect_eq("[3-4]n,n[1-2]", ["n1","n2","3n","4n"])
+
 if __name__ == '__main__':
     unittest.main()
