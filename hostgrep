@@ -3,6 +3,8 @@
 #
 # Grep-like utility understanding hostlists
 
+from __future__ import print_function
+
 __version__ = "#VERSION#"
 
 # Copyright (C) 2009 Kent Engström <kent@nsc.liu.se>
@@ -108,8 +110,8 @@ op.add_option("--version",
 (opts, args) = op.parse_args()
 
 if opts.version:
-    print "Version %s (library version %s)" % (__version__,
-                                               library_version)
+    print("Version %s (library version %s)" % (__version__,
+                                               library_version))
     sys.exit()
 
 if len(args) < 1:
@@ -146,6 +148,6 @@ try:
             f.close()
 except KeyboardInterrupt:
     sys.exit()
-except IOError, e:
+except IOError as e:
     sys.stderr.write(e.strerror + " '" + e.filename + "'\n")
     sys.exit(1)
