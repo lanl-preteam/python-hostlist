@@ -4,6 +4,7 @@
 # data aggregation tool - hostlist collected histograms on numerical data
 
 from __future__ import print_function
+from __future__ import division
 
 __version__ = "#VERSION#"
 
@@ -122,14 +123,14 @@ def readdata(cachefile):
 ## Statistical functions
 
 def mean(list):
-    return sum(list)/float(len(list))
+    return sum(list)/len(list)
 
 def median(list):
     tmp = sorted(list)
     if (len(tmp) % 2) == 0:
-        return (tmp[(len(tmp)/2)-1] + tmp[(len(tmp)/2)]) / 2
+        return (tmp[(len(tmp)//2)-1] + tmp[(len(tmp)//2)]) / 2
     else:
-        return tmp[int(len(tmp)/2)]
+        return tmp[int(len(tmp)//2)]
 
 def stdev(list):
     m = mean(list)
@@ -178,7 +179,7 @@ def refine_data(rawlist):
 
         # If more than half of the investigated lines have the same candidate...
         for candidate in key:
-            if key.count(candidate) > (len(key) / 2):
+            if key.count(candidate) > (len(key) // 2):
                 opts.key = candidate
                 iprint("auto-detected data at column: %i" % candidate)
                 break
