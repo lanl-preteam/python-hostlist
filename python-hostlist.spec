@@ -32,9 +32,13 @@ BuildArch:      noarch
 
 %global _description %{expand:
 The hostlist.py module knows how to expand and collect hostlist
-expressions. The package also includes the 'hostlist' binary which can
-be used to collect/expand hostlists and perform set operations on
-them.}
+expressions.
+
+The package also includes the 'hostlist' binary which can be used to
+collect/expand hostlists and perform set operations on them, 'pshbak'
+which collects output like 'dshbak' but using our hostlist library,
+'hostgrep' which is a grep-like utility that understands hostlists,
+and 'dbuck' which summarizes numerical data from multiple hosts.}
 
 %description %_description
 
