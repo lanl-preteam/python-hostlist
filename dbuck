@@ -3,6 +3,9 @@
 #
 # data aggregation tool - hostlist collected histograms on numerical data
 
+from __future__ import print_function
+from __future__ import division
+
 __version__ = "#VERSION#"
 
 # Copyright (C) 2010 Peter Kjellström <cap@nsc.liu.se>
@@ -23,8 +26,9 @@ __version__ = "#VERSION#"
 # 02110-1301, USA.
 
 import sys
+PY3 = sys.version_info >= (3,)
+
 import optparse
-import commands
 import math
 import os
 import stat
@@ -32,6 +36,12 @@ import time
 from pprint import pprint
 from hostlist import collect_hostlist
 from hostlist import expand_hostlist
+
+if PY3:
+    from subprocess import getoutput
+else:
+    from commands import getoutput
+    range = xrange
 
 def dprint(dstr):
     if opts.debug:
@@ -51,8 +61,8 @@ def iprint(istr):
 
 def gettermwidth():
     try:
-        cols = int(commands.getoutput("/bin/stty -F /dev/tty size").split()[1])
-    except:
+        cols = int(getoutput("/bin/stty -F /dev/tty size").split()[1])
+    except Exception:
         cols = 80
     return cols
 
@@ -68,7 +78,7 @@ def opencachefile(fmode):
                            "dbuck-%i" % os.geteuid())
     dprint("trying to open cache file in dir %s in mode %s" % (tmpdir, fmode))
     if fmode == "w":
-        oldmask = os.umask(077)
+        oldmask = os.umask(0o77)
         if not os.path.isdir(tmpdir):
             iprint("creating cache directory: %s" % tmpdir)
             wprint("this version automatically saves a copy of the last data")
@@ -113,15 +123,14 @@ def readdata(cachefile):
 ## Statistical functions
 
 def mean(list):
-    return sum(list)/float(len(list))
+    return sum(list)/len(list)
 
 def median(list):
-    tmp = list[:]
-    tmp.sort()
+    tmp = sorted(list)
     if (len(tmp) % 2) == 0:
-        return (tmp[(len(tmp)/2)-1] + tmp[(len(tmp)/2)]) / 2
+        return (tmp[(len(tmp)//2)-1] + tmp[(len(tmp)//2)]) / 2
     else:
-        return tmp[int(len(tmp)/2)]
+        return tmp[int(len(tmp)//2)]
 
 def stdev(list):
     m = mean(list)
@@ -170,7 +179,7 @@ def refine_data(rawlist):
 
         # If more than half of the investigated lines have the same candidate...
         for candidate in key:
-            if key.count(candidate) > (len(key) / 2):
+            if key.count(candidate) > (len(key) // 2):
                 opts.key = candidate
                 iprint("auto-detected data at column: %i" % candidate)
                 break
@@ -229,7 +238,7 @@ def parse_range(rstr):
         eprint("invalid range specified")
     dprint("list representation of processed range argument: %s" % str(rlist))
     try:
-        rlist = map(float, rlist)
+        rlist = list(map(float, rlist))
     except ValueError:
         eprint("invalid range specified")
     if (len(rlist) != 2 or
@@ -346,9 +355,9 @@ if (len(data) == 0):
     eprint("no data found")
 
 # sort it
-data.sort(lambda a, b: cmp(a[1], b[1]))
+data.sort(key=lambda x: x[1])
 # put the values in a simple list
-valuelist = map(lambda(x): x[1], data)
+valuelist = [x[1] for x in data]
 
 if opts.range:
     vmin = min(valuelist)
@@ -371,30 +380,30 @@ newbuckets = create_buckets_new(valuelist, opts.nbuckets, rmin, rmax)
 if (opts.range or opts.zero):
     addoverflowbuckets(newbuckets, rmin, vmax)
 
-for nbucket in xrange(len(newbuckets)):
+for nbucket in range(len(newbuckets)):
     newbuckets[nbucket]['nodelist'] = []
 
 if opts.debug:
     dprint("bucketlist created:")
-    for nbucket in xrange(len(newbuckets)):
+    for nbucket in range(len(newbuckets)):
         dprint(" bucket[%i] %f" % (nbucket, newbuckets[nbucket]['ub']))
 
 # Dump out some statistics
 if opts.statistics:
-    print "Statistical summary"
-    print "-" * (termwidth - 1)
-    print " %-26s: %i" % ("Number of values", len(valuelist))
-    print " %-26s: %i" % ("Number of rejected lines", nbadlines)
+    print("Statistical summary")
+    print("-" * (termwidth - 1))
+    print(" %-26s: %i" % ("Number of values", len(valuelist)))
+    print(" %-26s: %i" % ("Number of rejected lines", nbadlines))
     if (opts.range or opts.zero):
-        print " %-26s: %i" % ("Number of overflow values", nover)
-        print " %-26s: %i" % ("Number of underflow values", nunder)
-    print " %-26s: %f" % ("Min value", valuelist[0])
-    print " %-26s: %f" % ("Max value", valuelist[-1])
-    print " %-26s: %f" % ("Mean", mean(valuelist))
-    print " %-26s: %f" % ("Median", median(valuelist))
-    print " %-26s: %f" % ("Standard deviation", stdev(valuelist))
-    print " %-26s: %f" % ("Sum", sum(valuelist))
-    print
+        print(" %-26s: %i" % ("Number of overflow values", nover))
+        print(" %-26s: %i" % ("Number of underflow values", nunder))
+    print(" %-26s: %f" % ("Min value", valuelist[0]))
+    print(" %-26s: %f" % ("Max value", valuelist[-1]))
+    print(" %-26s: %f" % ("Mean", mean(valuelist)))
+    print(" %-26s: %f" % ("Median", median(valuelist)))
+    print(" %-26s: %f" % ("Standard deviation", stdev(valuelist)))
+    print(" %-26s: %f" % ("Sum", sum(valuelist)))
+    print()
 
 
 if opts.debug:
@@ -407,13 +416,13 @@ for (node, value) in data:
            (value == rmin and currentbucket == 0 and 'special' in newbuckets[0])):
         currentbucket += 1
         if opts.debug:
-            print
+            print()
         dprint("filling next bucket")
     if opts.debug:
         sys.stdout.write(".")
     newbuckets[currentbucket]['nodelist'].append(node)
 if opts.debug:
-    print
+    print()
 
 # Compute number of characters needed for printing values and number of nodes
 ncharvalue = len(str("%.2f" % max(valuelist[-1], rmax)))
@@ -432,8 +441,8 @@ if opts.verbose:
                                     " " * (ncharnodecnt - 3))
     if not opts.bars:
         header += "  HOSTLIST"
-    print header
-    print "-" * termwidth
+    print(header)
+    print("-" * termwidth)
 
 if opts.highlight_hostlist:
     highlight_set = set(expand_hostlist(opts.highlight_hostlist))
@@ -517,12 +526,12 @@ for bucket in newbuckets:
             specpad = " " * max(len("%s%.2f-%s%.2f" %
                                     (pad1, lower ,pad2, bucket['ub'])) - 9,
                                 0)
-            print "%-9s%s: %s%i%s%s" % (bucket['special'], specpad,
+            print("%-9s%s: %s%i%s%s" % (bucket['special'], specpad,
                                         pad3, len(bucket['nodelist']),
-                                        pad4, nodeliststr)
+                                        pad4, nodeliststr))
     else:
-        print "%s%.2f-%s%.2f: %s%i%s%s" % (pad1, lower,
+        print("%s%.2f-%s%.2f: %s%i%s%s" % (pad1, lower,
                                            pad2, bucket['ub'],
                                            pad3, len(bucket['nodelist']),
-                                           pad4, nodeliststr)
+                                           pad4, nodeliststr))
     lower = bucket['ub']
