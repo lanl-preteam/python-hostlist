@@ -75,13 +75,13 @@ BuildRequires: python%{python3_pkgversion}-devel
 
 
 %install
-%py3_install %{?extra_install_args}
+%py3_install -- %{?extra_install_args}
 %if %{with python2}
 %if 0%{?py2_install:1}
-%py2_install %{?extra_install_args}
+%py2_install -- %{?extra_install_args}
 %else
 # el6
-%py_install %{?extra_install_args}
+%py_install -- %{?extra_install_args}
 %endif
 %endif
 
