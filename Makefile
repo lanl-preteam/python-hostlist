@@ -24,7 +24,7 @@ tar: prepare
 	(cd versioned; make tar-versioned)
 
 tar-versioned:
-	python setup.py sdist
+	python3 setup.py sdist
 
 rpms: tar
 	rpmbuild -ta versioned/dist/python-hostlist-$(VERSION).tar.gz
@@ -33,7 +33,7 @@ pypi: prepare
 	(cd versioned; make pypi-versioned)
 
 pypi-versioned:
-	python setup.py sdist upload
+	python3 setup.py sdist upload
 
 clean:
 	rm -rf versioned
