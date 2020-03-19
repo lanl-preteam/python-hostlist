@@ -8,6 +8,12 @@
 %define __python2 /usr/bin/python2
 %endif
 
+# el8 complains if attempting to use the unversioned python_sitelib, and
+# python2_sitelib is not defined on el6. Define it if needed
+%if !0%{?python2_sitelib:1}
+%define python2_sitelib %{python_sitelib}
+%endif
+
 %if 0%{?el6}
 %define py_shbang_opts -E
 %else
@@ -103,7 +109,7 @@ rm -rf $RPM_BUILD_ROOT
 %if %{with python2}
 %files -n python2-%{srcname}
 %defattr(-,root,root,-)
-%{python_sitelib}/*
+%{python2_sitelib}/*
 %doc README
 %doc COPYING
 %doc CHANGES
