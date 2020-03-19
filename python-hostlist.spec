@@ -14,6 +14,9 @@
 %define python2_sitelib %{python_sitelib}
 %endif
 
+# expansion of python2_sitelib errors on el8 without this
+%define __python /usr/bin/python2
+
 %if 0%{?el6}
 %define py_shbang_opts -E
 %else
