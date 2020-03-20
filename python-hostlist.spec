@@ -54,7 +54,11 @@ and 'dbuck' which summarizes numerical data from multiple hosts.}
 %if %{with python2}
 %package -n python2-%{srcname}
 Summary: %{summary}
+%if 0%{?el8}
+BuildRequires: python2-devel
+%else
 BuildRequires: python-devel
+%endif
 Provides: python-%{srcname} = %{version}-%{release}
 Obsoletes: python-%{srcname} < 1.19-1
 
