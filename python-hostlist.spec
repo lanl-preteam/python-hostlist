@@ -88,6 +88,7 @@ BuildRequires: python%{python3_pkgversion}-devel
 
 
 %install
+rm -rf "$RPM_BUILD_ROOT"
 %py3_install -- %{?extra_install_args}
 %if %{with python2}
 %if 0%{?py2_install:1}
