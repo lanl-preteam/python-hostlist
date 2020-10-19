@@ -137,6 +137,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Oct 19 2020 Torbjörn Lönnemark <ketl@nsc.liu.se> - 1.21-1
+- Fixes for building on el8
+
 * Tue Jan 14 2020 Kent Engström <kent@nsc.liu.se> - 1.20-1
 - Adapt to Python 3 stricter comparison rules
 - Fix Python 2+2 support for hostgrep, pshbak, dbuck
