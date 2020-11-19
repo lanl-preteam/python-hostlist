@@ -15,7 +15,7 @@ all:
 	@echo "  make pypi - upload tar.gz to the Python Package Index"
 
 prepare:
-	rm -rf versioned
+	$(RM) -r versioned
 	mkdir versioned
 	cp -pr $(NON_VERSIONED_FILES) versioned
 	for f in $(VERSIONED_FILES); do sed -e "s/#VERSION#/$(VERSION)/" -e "s/#RELEASE#/$(RELEASE)/" <$$f >versioned/$$f; done
@@ -36,6 +36,4 @@ pypi-versioned:
 	python3 setup.py sdist upload
 
 clean:
-	rm -rf versioned
-
-
+	$(RM) -r versioned
