@@ -76,6 +76,13 @@ n[1-8]
 The program has a rather naive notion of what constitutes hostnames
 and hostlist.
 
+For version 1.21 and earlier, hostnames were allowed to contain
+exactly upper and lower case A-Z and the digits 0-9. This meant that
+you could not grep for names like "rack02-pos13". From version 1.22,
+the code dynamically adds additional characters from the hostlist
+provided on the command line, so that it will work to grep for
+hostnames containing those characters.
+
 .SH AUTHOR
 Written by Kent Engström <kent@nsc.liu.se>.
 

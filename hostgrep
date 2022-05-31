@@ -24,6 +24,7 @@ __version__ = "#VERSION#"
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+import string
 import sys
 import optparse
 import re
@@ -34,7 +35,6 @@ def die(s, exit_code = 1):
     sys.stderr.write(s + "\n")
     sys.exit(1)
 
-finder = re.compile(r'[A-Za-z0-9]+(\[[0-9,-]+\])*')
 def hosts_from_line(line):
     # --restrict option
     if restrict_regexp:
@@ -77,6 +77,18 @@ def search(f, filename):
         if bool(does_match) ^ bool(opts.invert_match):
             emit(line, filename, line_no)
 
+def compute_finder_regexp(search_set):
+    # We have always considered letters and digits to be part of potential hostnames,
+    # so we start with them and add any other characters seen
+    search_chars_set = set(string.ascii_uppercase + string.ascii_lowercase + string.digits)
+    for host in search_set:
+        search_chars_set |= set(host)
+
+    # We rely on re.escape being able to escape characters for the
+    # inside of a [...] character set, which seems to be the case.
+    search_chars = re.escape("".join(sorted(search_chars_set)))
+
+    return re.compile(r"[" + search_chars + r"]+(\[[0-9,-]+\])*")
 
 # MAIN
 
@@ -120,6 +132,7 @@ else:
     search_list = args[0]
 
 search_set = set(expand_hostlist(search_list))
+finder = compute_finder_regexp(search_set)
 
 if opts.print_filename in (True, False):
     do_print_filename = opts.print_filename
