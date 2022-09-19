@@ -1,7 +1,8 @@
 %global srcname hostlist
 
-# Enable python2 by default (for now). Change to 'bcond_with' to invert default
-%bcond_without python2
+# Support for python2 disabled by default. Pass --with python2 on command line
+# when building to enable.
+%bcond_with python2
 
 # Doesn't seem to be defined on el6, despite being referenced by other macros
 %if !0%{?__python2:1}
