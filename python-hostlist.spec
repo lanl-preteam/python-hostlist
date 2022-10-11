@@ -138,6 +138,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Oct 11 2022 Torbjörn Lönnemark <ketl@nsc.liu.se> - 1.22-1
+- hostgrep: dynamically add characters allowed in hostnames.
+- Make python2 support opt-in at build time
+
 * Mon Oct 19 2020 Torbjörn Lönnemark <ketl@nsc.liu.se> - 1.21-1
 - Fixes for building on el8
 
