@@ -263,7 +263,33 @@ def collect_hostlist_1(left_right):
     # num_int (numerically), then...
     # This determines the order of the final result.
 
-    sortlist.sort()
+    def sort_key(entry):
+        """
+        Sort sortlist entries without causing TypeError in Python 3.
+
+        Prefix is always present and a string.
+
+        If suffix is None, use the empty string. The empty string will sort
+        before all other strings (as None did in Python 2).
+
+        If num_int is None, use -1 instead. -1 sorts before all *possible*
+        numbers (as None did in Python 2). Negative numbers cannot be present
+        in a hostlist.
+
+        If num_width is None, use -1 instead. As before, -1 sorts before all
+        possible widths. An actual num_width of 0 should not be possible, so we
+        could technically use 0, but using -1 doesn't hurt, so we might as well
+        use that instead.
+        """
+        ((prefix, suffix), num_int, num_width, host) = entry
+        return (
+            (prefix, '' if suffix is None else suffix),
+            -1 if num_int is None else num_int,
+            -1 if num_width is None else num_width, host
+        )
+
+
+    sortlist.sort(key=sort_key)
 
     # We are ready to collect the result parts as a list of new (left,
     # right) tuples.
