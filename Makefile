@@ -46,3 +46,8 @@ pypi-versioned:
 
 clean:
 	$(RM) -r versioned
+
+.PHONY: test
+test:
+	PYTHONPATH=$(PWD) python2 test/test_hostlist.py
+	PYTHONPATH=$(PWD) python3 test/test_hostlist.py
