@@ -1,8 +1,14 @@
 %global srcname hostlist
 
+%if 0%{?rhel} <= 8
+# Support for python2 enabled by default. Pass --without python2 on command line
+# when building to disable.
+%bcond_without python2
+%else
 # Support for python2 disabled by default. Pass --with python2 on command line
 # when building to enable.
 %bcond_with python2
+%endif
 
 # Doesn't seem to be defined on el6, despite being referenced by other macros
 %if !0%{?__python2:1}
