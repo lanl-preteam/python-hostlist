@@ -144,6 +144,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Nov 30 2022 Torbjörn Lönnemark <ketl@nsc.liu.se> - 1.23.0-1
+- Fix TypeError in Python 3 when collecting 'n n1'
+- Build python2 packages on <= el8 by default
+
 * Tue Oct 11 2022 Torbjörn Lönnemark <ketl@nsc.liu.se> - 1.22-1
 - hostgrep: dynamically add characters allowed in hostnames.
 - Make python2 support opt-in at build time

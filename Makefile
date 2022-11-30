@@ -6,7 +6,7 @@ VERSIONED_FILES = hostlist.py hostlist hostlist.1 \
 NON_VERSIONED_FILES = test COPYING MANIFEST.in CHANGES Makefile
 
 NAME	= python-hostlist
-VERSION = 1.22
+VERSION = 1.23.0
 RELEASE = 1
 
 MOCK	= mock
