@@ -122,5 +122,11 @@ class TestExpand1(unittest.TestCase):
 
         self.collect_eq("[3-4]n,n[1-2]", ["n1","n2","3n","4n"])
 
+        # Same base host name with and without a number
+        # Test for new regression introduced with Python 3
+        self.collect_eq("n,n1", ["n", "n1"])
+        self.collect_eq("n,n1", ["n1", "n"])
+
+
 if __name__ == '__main__':
     unittest.main()
